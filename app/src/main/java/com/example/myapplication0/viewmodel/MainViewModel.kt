@@ -1,4 +1,4 @@
-﻿package com.example.myapplication0.viewmodel
+package com.example.myapplication0.viewmodel
 // PACKAGE
 // Dit bestand hoort bij de ViewModel-laag van de app.
 // Alles in deze package bevat de logica die de UI aanstuurt,
@@ -66,6 +66,26 @@ class MainViewModel : ViewModel() {
     //
     // `by` is Kotlin delegatie-syntax:
     // hiermee hoef je geen `.value` te schrijven.
+
+    // TOEKOMST (bij eigen API + Repository-laag):
+    // Deze uiState zal later gevoed worden door een StateFlow uit de repository.
+    // Nu gebruiken we bewust mutableStateOf voor directe Compose-observatie.
+    // -------------------------------------------------------------------------
+    // VOORBEELD IMPLEMENTATIE MET STATEFLOW (voor later):
+    //
+    // 1. Zorg voor de juiste imports:
+    // import kotlinx.coroutines.flow.MutableStateFlow
+    // import kotlinx.coroutines.flow.StateFlow
+    // import kotlinx.coroutines.flow.asStateFlow
+    //
+    // 2. Vervang de huidige 'var uiState' declaratie door deze twee regels:
+    // private val _uiState = MutableStateFlow<PhotoUiState>(PhotoUiState.Loading)
+    // val uiState: StateFlow<PhotoUiState> = _uiState.asStateFlow()
+    //
+    // 3. Pas in de functie 'loadPhotos()' de toewijzingen aan:
+    // In plaats van: uiState = PhotoUiState.Success(...)
+    // Gebruik je:    _uiState.value = PhotoUiState.Success(...)
+    // -------------------------------------------------------------------------
     var uiState: PhotoUiState by mutableStateOf(PhotoUiState.Loading)
         private set
         // `private set` betekent:

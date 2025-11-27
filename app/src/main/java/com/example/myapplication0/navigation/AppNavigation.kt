@@ -122,3 +122,123 @@ fun AppNavigation() {
         }
     }
 }
+
+// -----------------------------------------------------------------------------
+// TOEKOMSTOPTIE: MIGRATIE NAAR JETPACK NAVIGATION 3 (NAV-3)
+// -----------------------------------------------------------------------------
+//
+// Navigation 3 is de nieuwe generatie navigatie voor Jetpack Compose.
+// Het vervangt de traditionele Navigation Compose (“Navigation 2”).
+//
+// Waarom zou je Nav-3 later willen gebruiken?
+// • Navigatie wordt volledig *declaratief* (zoals de rest van Compose)
+// • Je beheert ZELF de back stack → veel voorspelbaarder gedrag
+// • Perfect voor list–detail, split-view, tablets, foldables
+// • Routes worden echte Kotlin-objecten i.p.v. Strings
+// • Beter te testen en minder boilerplate
+//
+// -----------------------------------------------------------------------------
+// 1) WELKE DEPENDENCIES JE ZOU MOETEN TOEVOEGEN (LATER)
+// -----------------------------------------------------------------------------
+// (Niet nu! Alleen wanneer je écht Nav-3 wil gebruiken.)
+// 
+// In libs.versions.toml of build.gradle.kts:
+//
+// implementation("androidx.navigation3:navigation-runtime:<latest>")
+// implementation("androidx.navigation3:navigation-ui:<latest>")
+//
+// -----------------------------------------------------------------------------
+// 2) HOE JE ROUTES DEFINIEERT MET NAV-3 (GEEN STRINGS MEER)
+// -----------------------------------------------------------------------------
+//
+// In plaats van:
+//    composable("detail/{photoId}")
+//
+// gebruik je in Nav-3 Kotlin objecten:
+//
+// sealed interface AppRoute : NavKey {
+//     data object List : AppRoute
+//     data class Detail(val photoId: Int) : AppRoute
+// }
+//
+// Dit dwingt type-veiligheid af.
+// Je hebt nooit meer foutieve route-strings.
+//
+// -----------------------------------------------------------------------------
+// 3) HOE JE EEN BACK STACK MAAKT (GEEN NAVCONTROLLER MEER)
+// -----------------------------------------------------------------------------
+//
+// In plaats van:
+//    val navController = rememberNavController()
+//
+// gebruik je:
+//
+//    val backStack = rememberNavBackStack<AppRoute>(start = AppRoute.List)
+//
+// De backstack *is jouw Compose-state*.
+// Dit betekent:
+// • Je kunt hem testen
+// • Je kunt hem debuggen
+// • Hij is volledig voorspelbaar
+//
+// -----------------------------------------------------------------------------
+// 4) HOE JE NAVIGATIE UITVOERT (GEEN navigate("detail/...") MEER)
+// -----------------------------------------------------------------------------
+//
+// In plaats van:
+//    navController.navigate("detail/")
+//
+// gebruik je:
+//
+//    backStack.push(AppRoute.Detail(photoId))
+//
+// Voor terug:
+//
+//    backStack.pop()
+//
+// Navigation wordt dus:
+// - push: vooruit navigeren
+// - pop: terug navigeren
+//
+// -----------------------------------------------------------------------------
+// 5) HOE JE SCHERMEN TONEN (VERVANGT NavHost)
+// -----------------------------------------------------------------------------
+//
+// In plaats van:
+//
+// NavHost(navController) { ... }
+//
+// gebruik je:
+//
+// NavDisplay(
+//     backStack = backStack,
+//     entryProvider = { entry ->
+//         when (val route = entry.key) {
+//             is AppRoute.List -> ListScreen(...)
+//             is AppRoute.Detail -> DetailScreen(photoId = route.photoId)
+//         }
+//     }
+// )
+//
+// Hiermee beschreven we declaratief welk scherm actief is.
+//
+// -----------------------------------------------------------------------------
+// 6) CONCREET: WAT MOET JE IN DIT PROJECT AANPASSEN ALS JE LATER MIGREERT
+// -----------------------------------------------------------------------------
+// • Verwijder NavController + NavHost + composable-routes
+// • Maak een sealed AppRoute-structuur aan
+// • Maak een rememberNavBackStack<AppRoute>
+// • NavDisplay gebruiken i.p.v. NavHost
+// • Navigatie aanpassen naar push/pop
+//
+// -----------------------------------------------------------------------------
+// SAMENVATTING
+// -----------------------------------------------------------------------------
+// Je huidige Navigation Compose (“Navigation 2”) is perfect voor deze les.
+// Later kun je overstappen naar Navigation 3 voor:
+// - betere testbaarheid
+// - type-veiliger navigeren
+// - complexere user flows
+//
+// Dit commentblok dient als migratiegids zodat je later eenvoudig kunt upgraden.
+// -----------------------------------------------------------------------------
