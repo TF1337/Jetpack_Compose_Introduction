@@ -7,6 +7,9 @@ import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.client.request.setBody
+import io.ktor.client.request.header
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.Serializable
@@ -68,5 +71,6 @@ data class ChatResp(val reply: String, val audioPath: String)
 // KEYWORD: suspend – netwerk I/O draait niet op de main thread
 suspend fun askBackend(baseUrl: String, prompt: String): ChatResp =
     client.post("$baseUrl/chat") {
+        header(HttpHeaders.ContentType, ContentType.Application.Json)
         setBody(ChatReq(prompt))
     }.body()
