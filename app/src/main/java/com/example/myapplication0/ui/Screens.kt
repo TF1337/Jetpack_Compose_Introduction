@@ -128,12 +128,12 @@ fun ListScreen(
                 OutlinedTextField(
                     value = prompt,
                     onValueChange = { prompt = it },
-                    label = { Text("Vraag aan backend") },
+                    label = { Text("Vraag aan EzChatbot") },
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(8.dp))
                 Button(onClick = { viewModel.sendPrompt("http://10.0.2.2:8080", prompt) }) {
-                    Text("Ask backend")
+                    Text("Ask EzChatBot")
                 }
                 // Toon de laatste reply (of foutmelding)
                 viewModel.chatReply?.let { reply ->
