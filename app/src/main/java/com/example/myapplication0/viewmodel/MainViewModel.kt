@@ -31,6 +31,10 @@ import com.example.myapplication0.data.askBackend
 import kotlinx.coroutines.launch
 // `launch` start een coroutine (achtergrondtaak).
 
+// Feature flag om de "andere API" (foto's) tijdelijk uit te schakelen.
+// Zet op `true` om opnieuw te laden; op `false` om te skippen en een lege lijst te tonen.
+private const val PHOTOS_ENABLED = false
+
 // FASE 3: MVVM ARCHITECTUUR & STATE MANAGEMENT
 //
 // TECHNISCHE CONTEXT: ViewModel Pattern
@@ -98,7 +102,12 @@ class MainViewModel : ViewModel() {
     // INIT BLOK
     // Deze code wordt automatisch uitgevoerd zodra de ViewModel wordt aangemaakt.
     init {
-        loadPhotos()
+        if (PHOTOS_ENABLED) {
+            loadPhotos()
+        } else {
+            // Direct een lege lijst aanbieden om netwerk + rendering kosten te vermijden
+            uiState = PhotoUiState.Success(emptyList())
+        }
     }
 
     // -------------------------------------------------------------
