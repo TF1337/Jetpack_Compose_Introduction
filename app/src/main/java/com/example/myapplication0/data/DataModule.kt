@@ -5,8 +5,11 @@ import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.get
+import io.ktor.client.request.post
+import io.ktor.client.request.setBody
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.Serializable
 
 // FASE 5: NETWORKING LAAG
 //
@@ -49,3 +52,21 @@ suspend fun fetchPhotos(): List<Photo> {
     //    gebruikmakend van de geregistreerde ContentNegotiation plugin.
     return client.get(url).body()
 }
+
+// -----------------------------------------------------------------------------
+// CHAT API INTEGRATIE (MINIMALE TOEVOEGING)
+// -----------------------------------------------------------------------------
+// Deze simpele dataklassen en functie koppelen de app aan het EzChatBot backend
+// via POST /chat. We hergebruiken de bestaande Ktor `client` en JSON-config.
+
+@Serializable
+data class ChatReq(val text: String)
+
+@Serializable
+data class ChatResp(val reply: String, val audioPath: String)
+
+// KEYWORD: suspend – netwerk I/O draait niet op de main thread
+suspend fun askBackend(baseUrl: String, prompt: String): ChatResp =
+    client.post("$baseUrl/chat") {
+        setBody(ChatReq(prompt))
+    }.body()

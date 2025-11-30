@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Ontwikkel-instelling: sta cleartext HTTP toe naar de emulator-host 10.0.2.2 -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+<!-- Let op: Verwijder of beperk deze configuratie voor productie, of gebruik HTTPS. -->
+</network-security-config>

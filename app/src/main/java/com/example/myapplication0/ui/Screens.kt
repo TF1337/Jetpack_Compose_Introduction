@@ -122,6 +122,27 @@ fun ListScreen(
         // Box wordt hier gebruikt als container voor de inhoud
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
 
+            // Eenvoudige chat-sectie bovenaan het scherm
+            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                var prompt by remember { mutableStateOf("") }
+                OutlinedTextField(
+                    value = prompt,
+                    onValueChange = { prompt = it },
+                    label = { Text("Vraag aan backend") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Spacer(Modifier.height(8.dp))
+                Button(onClick = { viewModel.sendPrompt("http://10.0.2.2:8080", prompt) }) {
+                    Text("Ask backend")
+                }
+                // Toon de laatste reply (of foutmelding)
+                viewModel.chatReply?.let { reply ->
+                    Spacer(Modifier.height(8.dp))
+                    Text(text = reply)
+                }
+                Spacer(Modifier.height(16.dp))
+            }
+
             // when is een Kotlin controle-structuur.
             // Hiermee bepalen we welk UI-scherm we tonen op basis van de state.
             when (val s = state) {
@@ -139,10 +160,13 @@ fun ListScreen(
 
                 // Bij succes tonen we de lijst met foto's
                 is PhotoUiState.Success -> {
-                    PhotoList(
-                        photos = s.photos,
-                        onItemClick = onItemClick
-                    )
+                    // Voeg extra top-padding toe zodat de lijst niet onder de chat-sectie valt
+                    Column(modifier = Modifier.fillMaxSize().padding(top = 140.dp)) {
+                        PhotoList(
+                            photos = s.photos,
+                            onItemClick = onItemClick
+                        )
+                    }
                 }
             }
         }

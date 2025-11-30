@@ -25,6 +25,8 @@ import com.example.myapplication0.data.Photo
 
 import com.example.myapplication0.data.fetchPhotos
 // Functie die via Ktor foto's ophaalt van het internet.
+import com.example.myapplication0.data.askBackend
+// Functie die een prompt naar het backend stuurt en een antwoord ontvangt.
 
 import kotlinx.coroutines.launch
 // `launch` start een coroutine (achtergrondtaak).
@@ -97,6 +99,28 @@ class MainViewModel : ViewModel() {
     // Deze code wordt automatisch uitgevoerd zodra de ViewModel wordt aangemaakt.
     init {
         loadPhotos()
+    }
+
+    // -------------------------------------------------------------
+    // CHAT: SIMPELE STATE + ACTIE (MINIMALE INTEGRATIE)
+    // -------------------------------------------------------------
+    // We tonen alleen de tekstuele reply. `audioPath` wordt genegeerd.
+    var chatReply: String? by mutableStateOf(null)
+        private set
+
+    // VOORBEELD AANROEP:
+    // viewModel.sendPrompt("http://10.0.2.2:8080", prompt)
+    fun sendPrompt(baseUrl: String, prompt: String) {
+        viewModelScope.launch {
+            try {
+                // Optioneel: vorige resultaat wissen
+                chatReply = null
+                val resp = askBackend(baseUrl, prompt)
+                chatReply = resp.reply
+            } catch (e: Exception) {
+                chatReply = "Fout: ${e.message}"
+            }
+        }
     }
 
     // FUNCTIE: loadPhotos
