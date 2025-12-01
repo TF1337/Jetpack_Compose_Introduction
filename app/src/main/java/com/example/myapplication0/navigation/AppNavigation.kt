@@ -32,6 +32,8 @@ import com.example.myapplication0.ui.DetailScreen
 
 import com.example.myapplication0.ui.ListScreen
 import com.example.myapplication0.ui.AnswersScreen
+import com.example.myapplication0.ui.Lesson1Screen
+import com.example.myapplication0.ui.Lesson4Screen
 // Het lijstscherm van de app.
 
 import com.example.myapplication0.viewmodel.MainViewModel
@@ -89,7 +91,9 @@ fun AppNavigation() {
                     // "detail/5"
                     navController.navigate("detail/$photoId")
                 },
-                onAnswersClick = { navController.navigate("answers") }
+                onAnswersClick = { navController.navigate("answers") },
+                onLesson1Click = { navController.navigate("lesson1") },
+                onLesson4Click = { navController.navigate("lesson4") }
             )
         }
 
@@ -128,6 +132,26 @@ fun AppNavigation() {
             AnswersScreen(
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() }
+            )
+        }
+
+        // ROUTE: LES 1 SCHERM
+        composable("lesson1") {
+            Lesson1Screen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onAnswersClick = { navController.navigate("answers") },
+                onLesson4Click = { navController.navigate("lesson4") }
+            )
+        }
+
+        // ROUTE: LES 4 SCHERM
+        composable("lesson4") {
+            Lesson4Screen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onAnswersClick = { navController.navigate("answers") },
+                onLesson1Click = { navController.navigate("lesson1") }
             )
         }
     }

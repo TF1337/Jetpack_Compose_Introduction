@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 // Leest de waarde van een Compose-state property via Kotlin-delegatie (`by`).
 
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.mutableIntStateOf
 // Maakt een waarneembare (observable) waarde voor Jetpack Compose.
 
 import androidx.compose.runtime.setValue
@@ -153,6 +154,76 @@ class MainViewModel : ViewModel() {
                 chatReply = "Fout: ${e.message}"
             }
         }
+    }
+
+    // -------------------------------------------------------------
+    // LES 1–3: SSOT voor zichtbaarheid van het chatbot-antwoord
+    // -------------------------------------------------------------
+    // Voorheen was hideReply lokale UI-state per scherm. Daardoor ging de
+    // gekozen zichtbaarheid verloren bij navigatie. Als Single Source of Truth
+    // in de ViewModel blijft de keuze behouden tussen schermen.
+    var isReplyHidden: Boolean by mutableStateOf(false)
+        private set
+
+    fun toggleReplyVisibility() {
+        isReplyHidden = !isReplyHidden
+    }
+
+    fun showReply() {
+        isReplyHidden = false
+    }
+
+    fun hideReply() {
+        isReplyHidden = true
+    }
+
+    // -------------------------------------------------------------
+    // LES 1 & 4: SSOT voor de chat prompt (Persistentie)
+    // -------------------------------------------------------------
+    // De gebruiker wil dat de ingevoerde tekst behouden blijft bij navigatie
+    // tussen schermen (Les 1, Les 4, Main). Daarom verplaatsen we de prompt
+    // van lokale state (rememberSaveable) naar de ViewModel.
+    var chatPrompt: String by mutableStateOf("")
+        // Setter mag public zijn voor Two-Way binding in TextFields,
+        // maar we gebruiken functies voor consistentie als je dat liever hebt.
+        // Voor textfields is een var met public set vaak handigst in Compose,
+        // maar om het patroon te volgen:
+        private set
+
+    fun updatePrompt(newText: String) {
+        chatPrompt = newText
+    }
+
+    fun resetPrompt() {
+        chatPrompt = ""
+    }
+
+    // -------------------------------------------------------------
+    // LES 1: STATE HOISTING VOOR LESSON1 CLICK COUNTER (SSOT)
+    // -------------------------------------------------------------
+    // We bewaren de teller in de ViewModel zodat deze blijft bestaan
+    // bij navigatie en rotatie. Dit is de Single Source of Truth.
+    var lesson1Counter: Int by mutableIntStateOf(0)
+        private set
+
+    fun incrementLesson1Counter() {
+        lesson1Counter++
+    }
+
+    // -------------------------------------------------------------
+    // LES 1: STATE HOISTING VOOR LESSON1 KLEUR WISSELEN (SSOT)
+    // -------------------------------------------------------------
+    // We bewaren ook de kleur (Blauw ↔ Rood) en het aantal wissels in de ViewModel
+    // zodat deze waarden behouden blijven bij navigatie en rotatie.
+    var lesson1IsBlue: Boolean by mutableStateOf(true)
+        private set
+
+    var lesson1ColorClicks: Int by mutableIntStateOf(0)
+        private set
+
+    fun toggleLesson1Color() {
+        lesson1IsBlue = !lesson1IsBlue
+        lesson1ColorClicks++
     }
 
     // FUNCTIE: loadPhotos

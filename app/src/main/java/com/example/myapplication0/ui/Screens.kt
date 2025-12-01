@@ -8,6 +8,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 // `clickable` maakt een UI-element aanklikbaar en koppelt er een actie aan.
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+// Animatie-API's voor het in- en uitfaden van UI-elementen.
+
 import androidx.compose.foundation.layout.*
 // Bevat layout-componenten zoals Column, Row, Box, Spacer en padding/fill-modifiers.
 
@@ -101,7 +108,9 @@ fun Lesson1Header(
 fun ListScreen(
     viewModel: MainViewModel,
     onItemClick: (Int) -> Unit,
-    onAnswersClick: () -> Unit // Les 4: navigatie naar antwoorden-overzicht (state hoisted)
+    onAnswersClick: () -> Unit, // Les 4: navigatie naar antwoorden-overzicht (state hoisted)
+    onLesson1Click: () -> Unit, // Nieuwe route voor Les 1 scherm
+    onLesson4Click: () -> Unit  // Nieuwe route voor Les 4 scherm
 ) {
     // STATE OBSERVATION
     // `uiState` is een Compose-observable waarde in de ViewModel.
@@ -126,11 +135,10 @@ fun ListScreen(
     }
 
     // Event-bridge van header → bottomBar voor reset van de prompt (les 1: lokale state)
-    var resetTick by rememberSaveable { mutableIntStateOf(0) }
+    // Verwijderd want prompt is nu SSOT in ViewModel.
 
-    // Les 1–3: eenvoudige UI-event → UI-presentatie (verberg/toon antwoord)
-    // We houden het bij lokale UI-state; de ViewModel blijft onaangetast.
-    var hideReply by rememberSaveable { mutableStateOf(false) }
+    // Les 1–3: zichtbaarheid van het antwoord is nu SSOT in de ViewModel
+    // (voorheen lokale UI-state die verloren ging bij navigatie)
 
     // Scaffold is een standaard Material-layout met vaste plekken voor topBar, content en bottomBar.
     // We plaatsen nu de knoppen (met uitleg) in de topBar en de chatbot in de bottomBar.
@@ -167,7 +175,11 @@ fun ListScreen(
                             // Menu-items zonder functionaliteit (alle acties staan in het overflow-menu)
                             DropdownMenuItem(
                                 text = { Text("Les 1") },
-                                onClick = { menuOpen = false }
+                                onClick = {
+                                    menuOpen = false
+                                    // Navigeer naar het nieuwe Les 1 scherm
+                                    onLesson1Click()
+                                }
                             )
                             DropdownMenuItem(
                                 text = { Text("Les 2") },
@@ -179,7 +191,10 @@ fun ListScreen(
                             )
                             DropdownMenuItem(
                                 text = { Text("Les 4") },
-                                onClick = { menuOpen = false }
+                                onClick = {
+                                    menuOpen = false
+                                    onLesson4Click()
+                                }
                             )
                             // Let op: echte acties blijven in het overflow-menu (⋮), conform afspraak.
                         }
@@ -199,44 +214,21 @@ fun ListScreen(
                                 expanded = overflowOpen,
                                 onDismissRequest = { overflowOpen = false }
                             ) {
-                                // Zelfde acties ook in het overflow-menu, conform verzoek
-                                // 1) Click Counter (Les 1)
+                                // Verberg/Toon antwoord
                                 DropdownMenuItem(
-                                    text = { Text("Click Counter (" + counter + ")") },
+                                    text = { Text(if (viewModel.isReplyHidden) "Toon antwoord" else "Verberg antwoord") },
                                     onClick = {
                                         overflowOpen = false
-                                        counter++
-                                        toggleInfo("counter")
+                                        viewModel.toggleReplyVisibility()
                                     }
                                 )
 
-                                // 2) Reset invoer
-                                DropdownMenuItem(
-                                    text = { Text("Reset invoer") },
-                                    onClick = {
-                                        overflowOpen = false
-                                        resetTick++
-                                        toggleInfo("reset")
-                                    }
-                                )
-
-                                // 3) Verberg/Toon antwoord
-                                DropdownMenuItem(
-                                    text = { Text(if (hideReply) "Toon antwoord" else "Verberg antwoord") },
-                                    onClick = {
-                                        overflowOpen = false
-                                        hideReply = !hideReply
-                                        toggleInfo("toggle")
-                                    }
-                                )
-
-                                // 4) Geschiedenis (navigatie)
+                                // Geschiedenis (navigatie)
                                 DropdownMenuItem(
                                     text = { Text("Geschiedenis") },
                                     onClick = {
                                         overflowOpen = false
-                                        // Didactisch: markeer de juiste uitleg voordat we navigeren
-                                        selectedInfo = "answers"
+                                        // Direct navigeren zonder uitleg op het startscherm (conform Les 4 verzoek)
                                         onAnswersClick()
                                     }
                                 )
@@ -259,29 +251,33 @@ fun ListScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Toon de laatste reply (of foutmelding) — boven het invoerveld
-                    viewModel.chatReply?.let { reply ->
-                        if (!hideReply) {
-                            Text(text = reply)
+                    // Gebruik AnimatedVisibility voor fade-in/out (conform verzoek gebruiker)
+                    val showReply = !viewModel.isReplyHidden && viewModel.chatReply != null
+                    AnimatedVisibility(
+                        visible = showReply,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        viewModel.chatReply?.let { reply ->
+                            OutlinedCard(
+                                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            ) {
+                                Text(text = reply, modifier = Modifier.padding(12.dp))
+                            }
                         }
                     }
 
-                    // Prompt + verzendknop onderaan (staat hiermee visueel het dichtst bij de bottom bar rand)
-                    var prompt by rememberSaveable { mutableStateOf("") }
-
-                    // Reset invoer wanneer resetTick wijzigt (event uit de header)
-                    LaunchedEffect(resetTick) {
-                        if (resetTick > 0) prompt = ""
-                    }
-
+                    // Prompt + verzendknop onderaan
+                    // Prompt is nu SSOT in ViewModel
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         OutlinedTextField(
-                            value = prompt,
-                            onValueChange = { prompt = it },
+                            value = viewModel.chatPrompt,
+                            onValueChange = { viewModel.updatePrompt(it) },
                             label = { Text("Vraag aan EzChatbot") },
                             modifier = Modifier.weight(1f)
                         )
                         Spacer(Modifier.width(8.dp))
-                        Button(onClick = { viewModel.sendPrompt("http://10.0.2.2:8080", prompt) }) {
+                        Button(onClick = { viewModel.sendPrompt("http://10.0.2.2:8080", viewModel.chatPrompt) }) {
                             Text("Ask")
                         }
                     }
@@ -310,22 +306,6 @@ fun ListScreen(
                     Card(shape = MaterialTheme.shapes.medium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                         Text(
                             text = "Reset Invoer → Les 1: Local state & rememberSaveable — we resetten alleen de lokale invoer (prompt).",
-                            modifier = Modifier.padding(12.dp)
-                        )
-                    }
-                }
-                "toggle" -> {
-                    Card(shape = MaterialTheme.shapes.medium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                        Text(
-                            text = "Verberg/Toon antwoord → Les 1–3: events → UI — een klik toggelt lokale UI‑state die de zichtbaarheid bepaalt.",
-                            modifier = Modifier.padding(12.dp)
-                        )
-                    }
-                }
-                "answers" -> {
-                    Card(shape = MaterialTheme.shapes.medium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                        Text(
-                            text = "Geschiedenis → Les 4: navigatie — opent een nieuw scherm met alle eerder opgeslagen antwoorden (ID & idee). Keer je terug, dan blijft deze uitleg zichtbaar.",
                             modifier = Modifier.padding(12.dp)
                         )
                     }
@@ -527,6 +507,413 @@ fun AnswersScreen(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+// SCREEN: Lesson1Screen
+// Doel: een simpele pagina voor Les 1 met een lokale Click Counter knop
+// die hetzelfde gedrag demonstreert als de eerdere overflow-actie:
+// - lokale rememberSaveable counter
+// - bij klik counter++
+// - optioneel een korte uitlegkaart die je aan/uit kunt toggelen door op de knop te klikken
+@Composable
+fun Lesson1Screen(
+    viewModel: MainViewModel,
+    onBack: () -> Unit,
+    onAnswersClick: () -> Unit,
+    onLesson4Click: () -> Unit
+) {
+    // Les 1: Click Counter is nu ge-hoist naar de ViewModel (SSOT)
+    // zodat de waarde behouden blijft bij navigatie.
+    // Eén gedeeld uitlegveld: welke uitleg is actief? "counter" | "color" | null
+    var selectedInfo by rememberSaveable { mutableStateOf<String?>(null) }
+    // Les 1: lokale appearance-state voor kleurwissel (Blauw ↔ Rood)
+    // Gehoist naar ViewModel (SSOT) zodat de kleur en kliktelling behouden blijven.
+    // Gebruik viewModel.lesson1IsBlue en viewModel.toggleLesson1Color().
+
+    // Lokale UI‑state voor de chatbot in deze screen (zoals in ListScreen)
+    // (resetTick verwijderd want prompt is nu SSOT in ViewModel)
+
+    Scaffold(
+        topBar = {
+            // Neem de topbar mee (zelfde principe als ListScreen): titel als menu‑anchor + overflow
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.statusBarsPadding()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Titelmenu (alleen visueel/plaatsvervangend hier)
+                    var menuOpen by rememberSaveable { mutableStateOf(false) }
+                    Box {
+                        Text(
+                            text = "Menu",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.clickable { menuOpen = true }
+                        )
+                        DropdownMenu(
+                            expanded = menuOpen,
+                            onDismissRequest = { menuOpen = false }
+                        ) {
+                            DropdownMenuItem(text = { Text("Les 1") }, onClick = { menuOpen = false })
+                            DropdownMenuItem(text = { Text("Les 2") }, onClick = { menuOpen = false })
+                            DropdownMenuItem(text = { Text("Les 3") }, onClick = { menuOpen = false })
+                            DropdownMenuItem(text = { Text("Les 4") }, onClick = {
+                                menuOpen = false
+                                onLesson4Click()
+                            })
+                        }
+                    }
+
+                    // Overflow menu met lokale acties (geen navigatie hier, conform minimale wijziging)
+                    var overflowOpen by rememberSaveable { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { overflowOpen = true }) {
+                            Text("⋮", style = MaterialTheme.typography.titleLarge)
+                        }
+                        DropdownMenu(
+                            expanded = overflowOpen,
+                            onDismissRequest = { overflowOpen = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(if (viewModel.isReplyHidden) "Toon antwoord" else "Verberg antwoord") },
+                                onClick = {
+                                    overflowOpen = false
+                                    viewModel.toggleReplyVisibility()
+                                }
+                            )
+                            // Geschiedenis (navigatie naar antwoorden-overzicht)
+                            DropdownMenuItem(
+                                text = { Text("Geschiedenis") },
+                                onClick = {
+                                    overflowOpen = false
+                                    onAnswersClick()
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        bottomBar = {
+            // Dezelfde chatbot‑bottomBar als in ListScreen zodat je kunt blijven chatten
+            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .imePadding()
+                        .navigationBarsPadding()
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Laatste reply boven de prompt
+                    // Les 1–4: Fade in/out animatie (AnimatedVisibility)
+                    val showReply = !viewModel.isReplyHidden && viewModel.chatReply != null
+                    AnimatedVisibility(
+                        visible = showReply,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        viewModel.chatReply?.let { reply ->
+                            OutlinedCard(
+                                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            ) {
+                                Text(text = reply, modifier = Modifier.padding(12.dp))
+                            }
+                        }
+                    }
+
+                    // Prompt + verzendknop onderaan
+                    // Prompt is nu SSOT in ViewModel
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = viewModel.chatPrompt,
+                            onValueChange = { viewModel.updatePrompt(it) },
+                            label = { Text("Vraag aan EzChatbot") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Button(onClick = { viewModel.sendPrompt("http://10.0.2.2:8080", viewModel.chatPrompt) }) {
+                            Text("Ask")
+                        }
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
+        // Inhoud van Les 1 blijft identiek, maar nu binnen de Scaffold en met back‑knop
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Terugknop (conform pattern)
+            Button(onClick = onBack) { Text("Terug") }
+
+            Text(text = "Les 1 — State & recomposition", style = MaterialTheme.typography.headlineSmall)
+
+            // Actieknoppen voor Les 1 (onder elkaar of naast elkaar; we houden het compact)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // 1) Click Counter
+                Button(
+                    onClick = {
+                        viewModel.incrementLesson1Counter()
+                        selectedInfo = "counter" // gedeelde uitleg updaten
+                    }
+                ) {
+                    Text("Click Counter (${viewModel.lesson1Counter})")
+                }
+
+                // 2) Kleur wisselen (Blauw ↔ Rood)
+                Button(
+                    onClick = {
+                        viewModel.toggleLesson1Color()
+                        selectedInfo = "color" // gedeelde uitleg updaten
+                    }
+                ) {
+                    Text("Kleur wisselen (${viewModel.lesson1ColorClicks})")
+                }
+
+                // 3) Reset invoer — verplaatst vanuit overflow naar Les 1
+                Button(
+                    onClick = {
+                        viewModel.resetPrompt()
+                        selectedInfo = "reset"
+                    }
+                ) {
+                    Text("Reset invoer")
+                }
+
+                // 4) Verberg/Toon antwoord
+                Button(
+                    onClick = {
+                        viewModel.toggleReplyVisibility()
+                        selectedInfo = "toggle"
+                    }
+                ) {
+                    Text(if (viewModel.isReplyHidden) "Toon antwoord" else "Verberg antwoord")
+                }
+
+                // 5) Single Source of Thruth (uitlegknop)
+                Button(
+                    onClick = {
+                        selectedInfo = "ssot"
+                    }
+                ) {
+                    Text("Single Source of Thruth")
+                }
+            }
+
+            // Eén gedeeld uitlegveld op een vaste plek (voorkomt layout‑verschuivingen)
+            Card(shape = MaterialTheme.shapes.medium) {
+                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    when (selectedInfo) {
+                        "counter" -> Text(
+                            text = "Click Counter → Les 1: lokale state (rememberSaveable) en recomposition: elke klik verandert de Int‑state en hertekent de UI."
+                        )
+                        "color" -> Text(
+                            text = "Kleur wisselen → Les 1: appearance via state in de ViewModel (SSOT). Een Boolean bepaalt de kleur (Blauw ↔ Rood) en triggert recomposition."
+                        )
+                        "reset" -> Text(
+                            text = "Reset Invoer → Les 1: Local state & rememberSaveable — we resetten alleen de lokale invoer (prompt) op dit scherm."
+                        )
+                        "toggle" -> Text(
+                            text = "Verberg/Toon antwoord → Les 1–3: events → UI en SSOT. De zichtbaarheid wordt geregeld in de ViewModel."
+                        )
+                        "ssot" -> Text(
+                            text = "Single Source of Truth → Les 1–4: we bewaren de Click Counter in de ViewModel. Zo blijft de waarde bestaan bij navigatie/rotatie, en is de ViewModel de bron waar de UI naar kijkt."
+                        )
+                        else -> Text(
+                            text = "Kies een actie (Click Counter of Kleur wisselen) om de uitleg te tonen."
+                        )
+                    }
+
+                    // Klein demovlakje dat de huidige kleur laat zien (Blauw = primaryContainer, Rood = errorContainer)
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(24.dp)
+                            .padding(top = 4.dp)
+                            .let { base ->
+                                // Gebruik een Box binnen een Card: we geven de achtergrondkleur met een Surface voor Material-kleuren
+                                base
+                            }
+                    ) {
+                        Surface(color = if (viewModel.lesson1IsBlue) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer) {
+                            Spacer(modifier = Modifier.fillMaxSize())
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// SCREEN: Lesson4Screen
+// Doel: een pagina voor Les 4 (Navigatie) met structuur voor Geschiedenis.
+@Composable
+fun Lesson4Screen(
+    viewModel: MainViewModel,
+    onBack: () -> Unit,
+    onAnswersClick: () -> Unit,
+    onLesson1Click: () -> Unit
+) {
+    // Lokaal state-beheer voor uitleg
+    var selectedInfo by rememberSaveable { mutableStateOf<String?>(null) }
+
+    // Lokale state voor chatbot-input (resetTick verwijderd want prompt is nu SSOT in ViewModel)
+
+    Scaffold(
+        topBar = {
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.statusBarsPadding()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Titelmenu
+                    var menuOpen by rememberSaveable { mutableStateOf(false) }
+                    Box {
+                        Text(
+                            text = "Menu",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.clickable { menuOpen = true }
+                        )
+                        DropdownMenu(
+                            expanded = menuOpen,
+                            onDismissRequest = { menuOpen = false }
+                        ) {
+                            DropdownMenuItem(text = { Text("Les 1") }, onClick = {
+                                menuOpen = false
+                                onLesson1Click()
+                            })
+                            DropdownMenuItem(text = { Text("Les 2") }, onClick = { menuOpen = false })
+                            DropdownMenuItem(text = { Text("Les 3") }, onClick = { menuOpen = false })
+                            DropdownMenuItem(text = { Text("Les 4") }, onClick = { menuOpen = false })
+                        }
+                    }
+
+                    // Overflow menu
+                    var overflowOpen by rememberSaveable { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { overflowOpen = true }) {
+                            Text("⋮", style = MaterialTheme.typography.titleLarge)
+                        }
+                        DropdownMenu(
+                            expanded = overflowOpen,
+                            onDismissRequest = { overflowOpen = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(if (viewModel.isReplyHidden) "Toon antwoord" else "Verberg antwoord") },
+                                onClick = {
+                                    overflowOpen = false
+                                    viewModel.toggleReplyVisibility()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Geschiedenis") },
+                                onClick = {
+                                    overflowOpen = false
+                                    // Navigeer direct, maar zet uitleg aan voor als we terugkomen
+                                    selectedInfo = "history"
+                                    onAnswersClick()
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        bottomBar = {
+            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .imePadding()
+                        .navigationBarsPadding()
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Les 1–4: Fade in/out animatie (AnimatedVisibility)
+                    val showReply = !viewModel.isReplyHidden && viewModel.chatReply != null
+                    AnimatedVisibility(
+                        visible = showReply,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        viewModel.chatReply?.let { reply ->
+                            OutlinedCard(
+                                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            ) {
+                                Text(text = reply, modifier = Modifier.padding(12.dp))
+                            }
+                        }
+                    }
+                    
+                    // Prompt is nu SSOT in ViewModel
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = viewModel.chatPrompt,
+                            onValueChange = { viewModel.updatePrompt(it) },
+                            label = { Text("Vraag aan EzChatbot") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Button(onClick = { viewModel.sendPrompt("http://10.0.2.2:8080", viewModel.chatPrompt) }) {
+                            Text("Ask")
+                        }
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Button(onClick = onBack) { Text("Terug") }
+
+            Text(text = "Les 4 — Navigatie", style = MaterialTheme.typography.headlineSmall)
+
+            // Knop "Geschiedenis"
+            Button(
+                onClick = {
+                    selectedInfo = "history"
+                    // Navigatie gebeurt nu alleen via het overflow menu (Les 4 eis)
+                }
+            ) {
+                Text("Geschiedenis")
+            }
+
+            // Uitlegkaart
+            if (selectedInfo == "history") {
+                Card(shape = MaterialTheme.shapes.medium) {
+                    Text(
+                        text = "Geschiedenis → Les 4: navigatie — opent een nieuw scherm met alle eerder opgeslagen antwoorden. De navigatie wordt geregeld via de NavController en routes.",
+                        modifier = Modifier.padding(12.dp)
+                    )
+                }
+            } else {
+                Text("Klik op Geschiedenis om de navigatie te starten en uitleg te zien.")
             }
         }
     }
