@@ -117,6 +117,20 @@ class MainViewModel : ViewModel() {
     var chatReply: String? by mutableStateOf(null)
         private set
 
+    // Antwoord-geschiedenis (Les 1–4: Single Source of Truth in ViewModel)
+    // We slaan elk gegenereerd antwoord op met een uniek ID en het bijbehorende idee (de prompt).
+    data class Answer(
+        val id: Int,
+        val idea: String,   // Het ingevoerde idee/prompt van de gebruiker
+        val text: String,   // Het antwoord van de backend
+        val timestamp: Long // Voor sortering/weergave (optioneel)
+    )
+
+    var answers: List<Answer> by mutableStateOf(emptyList())
+        private set
+
+    private var nextAnswerId: Int = 1
+
     // VOORBEELD AANROEP:
     // viewModel.sendPrompt("http://10.0.2.2:8080", prompt)
     fun sendPrompt(baseUrl: String, prompt: String) {
@@ -126,6 +140,15 @@ class MainViewModel : ViewModel() {
                 chatReply = null
                 val resp = askBackend(baseUrl, prompt)
                 chatReply = resp.reply
+
+                // Sla het antwoord op in de ViewModel-geschiedenis
+                val answer = Answer(
+                    id = nextAnswerId++,
+                    idea = prompt,
+                    text = resp.reply,
+                    timestamp = System.currentTimeMillis()
+                )
+                answers = answers + answer
             } catch (e: Exception) {
                 chatReply = "Fout: ${e.message}"
             }

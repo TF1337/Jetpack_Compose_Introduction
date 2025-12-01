@@ -31,6 +31,7 @@ import com.example.myapplication0.ui.DetailScreen
 // Het detailscherm van de app.
 
 import com.example.myapplication0.ui.ListScreen
+import com.example.myapplication0.ui.AnswersScreen
 // Het lijstscherm van de app.
 
 import com.example.myapplication0.viewmodel.MainViewModel
@@ -87,7 +88,8 @@ fun AppNavigation() {
                     // We bouwen hier dynamisch de route op:
                     // "detail/5"
                     navController.navigate("detail/$photoId")
-                }
+                },
+                onAnswersClick = { navController.navigate("answers") }
             )
         }
 
@@ -118,6 +120,14 @@ fun AppNavigation() {
                 onBack = {
                     navController.popBackStack()
                 }
+            )
+        }
+
+        // ROUTE: ANTWOORDEN OVERZICHT
+        composable("answers") {
+            AnswersScreen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() }
             )
         }
     }

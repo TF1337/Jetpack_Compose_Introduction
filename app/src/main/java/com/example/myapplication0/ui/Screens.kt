@@ -19,6 +19,7 @@ import androidx.compose.material3.*
 // Material 3 UI-componenten zoals Text, Button, ListItem, Scaffold, etc.
 
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 // Bevat Compose state-mechanismen zoals @Composable, remember en mutableStateOf.
 
 import androidx.compose.ui.Alignment
@@ -97,7 +98,8 @@ fun Lesson1Header(
 @Composable
 fun ListScreen(
     viewModel: MainViewModel,
-    onItemClick: (Int) -> Unit
+    onItemClick: (Int) -> Unit,
+    onAnswersClick: () -> Unit // Les 4: navigatie naar antwoorden-overzicht (state hoisted)
 ) {
     // STATE OBSERVATION
     // `uiState` is een Compose-observable waarde in de ViewModel.
@@ -105,25 +107,98 @@ fun ListScreen(
     val state = viewModel.uiState
 
     // LOCAL UI STATE
-    // `remember` bewaart deze waarde tijdens recompositions.
+    // `rememberSaveable` zorgt ervoor dat de waarde ook na rotatie blijft bestaan (Les 1).
     // Deze counter hoort alleen bij dit scherm en niet in de ViewModel.
-    var counter by remember { mutableIntStateOf(0) }
+    var counter by rememberSaveable { mutableIntStateOf(0) }
+
+    // UI-toelichtingen ("spraakbubbles") per knop. Klik toggelt zichtbaar/onzichtbaar.
+    var showCounterInfo by rememberSaveable { mutableStateOf(false) }
+    var showResetInfo by rememberSaveable { mutableStateOf(false) }
+    var showToggleReplyInfo by rememberSaveable { mutableStateOf(false) }
+    var showAnswersInfo by rememberSaveable { mutableStateOf(false) }
+
+    // Les 1–3: eenvoudige UI-event → UI-presentatie (verberg/toon antwoord)
+    // We houden het bij lokale UI-state; de ViewModel blijft onaangetast.
+    var hideReply by rememberSaveable { mutableStateOf(false) }
 
     // Scaffold is een standaard Material-layout met vaste plekken
-    // voor topBar, content, snackbar, etc.
-    Scaffold(
-        topBar = {
-            Lesson1Header(
-                counter = counter,
-                onIncrement = { counter++ }
-            )
-        }
-    ) { padding ->
+    // voor content, snackbar, etc. TopBar is volledig verwijderd (eis 1).
+    Scaffold { padding ->
         // Box wordt hier gebruikt als container voor de inhoud
         Box(modifier = Modifier.padding(padding).fillMaxSize()) {
 
-            // Eenvoudige chat-sectie bovenaan het scherm
-            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            // Eenvoudige chat-sectie + didactische knoppen bovenaan het scherm
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // 1) Click Counter (Les 1)
+                Button(
+                    onClick = {
+                        counter++                // State & recomposition (Les 1)
+                        showCounterInfo = !showCounterInfo // Toon/verberg uitleg
+                    }
+                ) { Text("Click Counter: $counter") }
+
+                if (showCounterInfo) {
+                    // Spraakbubble met uitleg
+                    Card(shape = MaterialTheme.shapes.medium) {
+                        Text(
+                            text = "Les 1: State & recomposition — elke klik verhoogt de teller en triggert een recomposition.",
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+
+                // 2) Reset invoer (maakt alleen de lokale prompt leeg)
+                Button(
+                    onClick = {
+                        // Wordt hieronder op de daadwerkelijke prompt toegepast
+                        showResetInfo = !showResetInfo
+                    }
+                ) { Text("Reset invoer") }
+
+                if (showResetInfo) {
+                    Card(shape = MaterialTheme.shapes.medium) {
+                        Text(
+                            text = "Les 1: Local state & rememberSaveable — we resetten alleen de lokale invoer.",
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+
+                // 3) Verberg/Toon antwoord (UI-event → UI-presentatie)
+                Button(
+                    onClick = {
+                        hideReply = !hideReply
+                        showToggleReplyInfo = !showToggleReplyInfo
+                    }
+                ) { Text(if (hideReply) "Toon antwoord" else "Verberg antwoord") }
+
+                if (showToggleReplyInfo) {
+                    Card(shape = MaterialTheme.shapes.medium) {
+                        Text(
+                            text = "Les 1–3: Events → UI — een klik toggelt lokale UI-state die bepaalt of het antwoord zichtbaar is.",
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+
+                // 4) Antwoorden
+                // Navigatie naar een apart scherm waar je alle opgeslagen antwoorden ziet (met ID & idee)
+                Button(onClick = onAnswersClick) { Text("Antwoorden") }
+                // Didactische toelichting blijft beschikbaar via toggle, maar we navigeren direct met de knop.
+                if (showAnswersInfo) {
+                    Card(shape = MaterialTheme.shapes.medium) {
+                        Text(
+                            text = "Les 4: Navigatie — 'Antwoorden' opent een nieuw scherm met alle eerder opgeslagen antwoorden (met ID & idee).",
+                            modifier = Modifier.padding(12.dp)
+                        )
+                    }
+                }
+
                 var prompt by remember { mutableStateOf("") }
                 OutlinedTextField(
                     value = prompt,
@@ -132,13 +207,25 @@ fun ListScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(Modifier.height(8.dp))
+                // Reset invoer actie (koppelen aan de knop hierboven)
+                LaunchedEffect(showResetInfo) {
+                    // Als de gebruiker op "Reset invoer" klikt, maken we de prompt leeg.
+                    // We koppelen dit via LaunchedEffect om de logica in dezelfde scope te houden
+                    // zonder extra state-variabelen aan te maken.
+                    if (showResetInfo) {
+                        prompt = ""
+                    }
+                }
+
                 Button(onClick = { viewModel.sendPrompt("http://10.0.2.2:8080", prompt) }) {
                     Text("Ask EzChatBot")
                 }
                 // Toon de laatste reply (of foutmelding)
                 viewModel.chatReply?.let { reply ->
                     Spacer(Modifier.height(8.dp))
-                    Text(text = reply)
+                    if (!hideReply) {
+                        Text(text = reply)
+                    }
                 }
                 Spacer(Modifier.height(16.dp))
             }
@@ -160,8 +247,10 @@ fun ListScreen(
 
                 // Bij succes tonen we de lijst met foto's
                 is PhotoUiState.Success -> {
-                    // Voeg extra top-padding toe zodat de lijst niet onder de chat-sectie valt
-                    Column(modifier = Modifier.fillMaxSize().padding(top = 140.dp)) {
+                    // Voeg extra top-padding toe zodat de lijst niet onder de didactische sectie valt
+                    // Let op: deze waarde is puur presentational en kan afhankelijk van de zichtbare
+                    // spraakbubbles variëren. Voor de les houden we het eenvoudig en statisch.
+                    Column(modifier = Modifier.fillMaxSize().padding(top = 240.dp)) {
                         PhotoList(
                             photos = s.photos,
                             onItemClick = onItemClick
@@ -270,6 +359,49 @@ fun DetailScreen(
         } else {
             // Wordt getoond als de data nog niet geladen is
             Text("Foto niet gevonden of data nog niet geladen.")
+        }
+    }
+}
+
+// SCREEN: AnswersScreen
+// Toont alle eerder gegenereerde antwoorden met uniek ID en het idee (prompt).
+@Composable
+fun AnswersScreen(
+    viewModel: MainViewModel,
+    onBack: () -> Unit
+) {
+    val answers = viewModel.answers
+
+    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+
+        // Terug-knop naar vorig scherm
+        Button(onClick = onBack) { Text("Terug") }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(
+            text = "Antwoord geschiedenis",
+            style = MaterialTheme.typography.headlineMedium
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (answers.isEmpty()) {
+            Text("Nog geen antwoorden opgeslagen.")
+        } else {
+            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(answers, key = { it.id }) { a ->
+                    Card(shape = MaterialTheme.shapes.medium) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(text = "ID: ${a.id}")
+                            Spacer(Modifier.height(4.dp))
+                            Text(text = "Idee: ${a.idea}")
+                            Spacer(Modifier.height(4.dp))
+                            Text(text = a.text)
+                        }
+                    }
+                }
+            }
         }
     }
 }
