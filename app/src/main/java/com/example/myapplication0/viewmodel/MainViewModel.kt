@@ -30,6 +30,8 @@ import com.example.myapplication0.data.askBackend
 
 import kotlinx.coroutines.launch
 // `launch` start een coroutine (achtergrondtaak).
+import androidx.compose.runtime.mutableStateListOf
+// Observable lijst voor Compose (geschikt voor LazyColumn en recomposition).
 
 // Feature flag om de "andere API" (foto's) tijdelijk uit te schakelen.
 // Zet op `true` om opnieuw te laden; op `false` om te skippen en een lege lijst te tonen.
@@ -117,6 +119,12 @@ class MainViewModel : ViewModel() {
     var chatReply: String? by mutableStateOf(null)
         private set
 
+    // BEWAREN VAN ANTWOORDEN (Les 1 – state hoisting in ViewModel)
+    // Deze lijst wordt gebruikt door het Antwoorden-overzichtsscherm.
+    data class ChatAnswer(val id: Int, val text: String)
+    private var nextAnswerId = 1
+    val answers = mutableStateListOf<ChatAnswer>()
+
     // VOORBEELD AANROEP:
     // viewModel.sendPrompt("http://10.0.2.2:8080", prompt)
     fun sendPrompt(baseUrl: String, prompt: String) {
@@ -126,6 +134,8 @@ class MainViewModel : ViewModel() {
                 chatReply = null
                 val resp = askBackend(baseUrl, prompt)
                 chatReply = resp.reply
+                // Sla succesvol antwoord op met auto-increment id
+                answers += ChatAnswer(id = nextAnswerId++, text = resp.reply)
             } catch (e: Exception) {
                 chatReply = "Fout: ${e.message}"
             }
