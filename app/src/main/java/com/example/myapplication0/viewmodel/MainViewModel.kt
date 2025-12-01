@@ -137,7 +137,9 @@ class MainViewModel : ViewModel() {
     fun sendPrompt(baseUrl: String, prompt: String) {
         viewModelScope.launch {
             try {
-                // Optioneel: vorige resultaat wissen
+                // Auto-open the reply area so the user sees "Thinking..."
+                isReplyHidden = false
+                isThinking = true
                 chatReply = null
                 val resp = askBackend(baseUrl, prompt)
                 chatReply = resp.reply
@@ -152,6 +154,8 @@ class MainViewModel : ViewModel() {
                 answers = answers + answer
             } catch (e: Exception) {
                 chatReply = "Fout: ${e.message}"
+            } finally {
+                isThinking = false
             }
         }
     }
@@ -163,6 +167,11 @@ class MainViewModel : ViewModel() {
     // gekozen zichtbaarheid verloren bij navigatie. Als Single Source of Truth
     // in de ViewModel blijft de keuze behouden tussen schermen.
     var isReplyHidden: Boolean by mutableStateOf(false)
+        private set
+
+    // LOADING STATE (Thinking...)
+    // Zorgt dat de UI weet dat de chatbot bezig is.
+    var isThinking: Boolean by mutableStateOf(false)
         private set
 
     fun toggleReplyVisibility() {

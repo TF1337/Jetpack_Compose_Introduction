@@ -145,6 +145,7 @@ fun AppNavigation() {
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
                 onAnswersClick = { navController.navigate("answers") },
+                onHomeClick = { navController.navigate("list") },
                 onLesson1Click = { }, // Doe niets als we al op les 1 zijn (of herlaad)
                 onLesson2Click = { navController.navigate("lesson2") },
                 onLesson3Click = { navController.navigate("lesson3") },
@@ -158,6 +159,7 @@ fun AppNavigation() {
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
                 onAnswersClick = { navController.navigate("answers") },
+                onHomeClick = { navController.navigate("list") },
                 onLesson1Click = { navController.navigate("lesson1") },
                 onLesson3Click = { navController.navigate("lesson3") },
                 onLesson4Click = { navController.navigate("lesson4") }
@@ -170,6 +172,7 @@ fun AppNavigation() {
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
                 onAnswersClick = { navController.navigate("answers") },
+                onHomeClick = { navController.navigate("list") },
                 onLesson1Click = { navController.navigate("lesson1") },
                 onLesson2Click = { navController.navigate("lesson2") },
                 onLesson4Click = { navController.navigate("lesson4") }
@@ -182,6 +185,7 @@ fun AppNavigation() {
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
                 onAnswersClick = { navController.navigate("answers") },
+                onHomeClick = { navController.navigate("list") },
                 onLesson1Click = { navController.navigate("lesson1") },
                 onLesson2Click = { navController.navigate("lesson2") },
                 onLesson3Click = { navController.navigate("lesson3") },

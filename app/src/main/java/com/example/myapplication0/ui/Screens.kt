@@ -6,6 +6,7 @@
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
 // `clickable` maakt een UI-element aanklikbaar en koppelt er een actie aan.
 
 import androidx.compose.animation.AnimatedVisibility
@@ -14,6 +15,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 // Animatie-API's voor het in- en uitfaden van UI-elementen.
+import androidx.compose.animation.core.*
 
 import androidx.compose.foundation.layout.*
 // Bevat layout-componenten zoals Column, Row, Box, Spacer en padding/fill-modifiers.
@@ -99,6 +101,31 @@ fun Lesson1Header(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun NavigationSegmentedButtons(
+    currentSelection: String,
+    onNavigate: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val options = listOf("Home", "Les 1", "Les 2", "Les 3", "Les 4")
+    SingleChoiceSegmentedButtonRow(
+        modifier = modifier
+            .horizontalScroll(rememberScrollState())
+            .padding(end = 8.dp)
+    ) {
+        options.forEachIndexed { index, label ->
+            SegmentedButton(
+                shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
+                onClick = { onNavigate(label) },
+                selected = currentSelection == label
+            ) {
+                Text(label, style = MaterialTheme.typography.labelSmall, maxLines = 1)
+            }
+        }
+    }
+}
+
 // SCREEN: ListScreen
 // Dit is een volledig scherm (pagina) in de app.
 // Het scherm ontvangt:
@@ -161,52 +188,19 @@ fun ListScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     // TITEL als navigatie/menuknop (anchor voor DropdownMenu)
-                    var menuOpen by rememberSaveable { mutableStateOf(false) }
-
-                    Box {
-                        Text(
-                            text = "Menu", // Titel fungeert als menu-trigger (voorheen "EzChat")
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.clickable { menuOpen = true }
-                        )
-
-                        DropdownMenu(
-                            expanded = menuOpen,
-                            onDismissRequest = { menuOpen = false }
-                        ) {
-                            // Menu-items zonder functionaliteit (alle acties staan in het overflow-menu)
-                            DropdownMenuItem(
-                                text = { Text("Les 1") },
-                                onClick = {
-                                    menuOpen = false
-                                    // Navigeer naar het nieuwe Les 1 scherm
-                                    onLesson1Click()
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Les 2") },
-                                onClick = {
-                                    menuOpen = false
-                                    onLesson2Click()
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Les 3") },
-                                onClick = {
-                                    menuOpen = false
-                                    onLesson3Click()
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Les 4") },
-                                onClick = {
-                                    menuOpen = false
-                                    onLesson4Click()
-                                }
-                            )
-                            // Let op: echte acties blijven in het overflow-menu (⋮), conform afspraak.
-                        }
-                    }
+                    NavigationSegmentedButtons(
+                        currentSelection = "Home",
+                        onNavigate = { option ->
+                            when (option) {
+                                "Home" -> { /* Already here */ }
+                                "Les 1" -> onLesson1Click()
+                                "Les 2" -> onLesson2Click()
+                                "Les 3" -> onLesson3Click()
+                                "Les 4" -> onLesson4Click()
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
 
                     // ACTIONS (drie puntjes) — nu ook een DropdownMenu, zoals gevraagd
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -260,17 +254,21 @@ fun ListScreen(
                 ) {
                     // Toon de laatste reply (of foutmelding) — boven het invoerveld
                     // Gebruik AnimatedVisibility voor fade-in/out (conform verzoek gebruiker)
-                    val showReply = !viewModel.isReplyHidden && viewModel.chatReply != null
+                    val showReply = !viewModel.isReplyHidden && (viewModel.chatReply != null || viewModel.isThinking)
                     AnimatedVisibility(
                         visible = showReply,
                         enter = fadeIn() + expandVertically(),
                         exit = fadeOut() + shrinkVertically()
                     ) {
-                        viewModel.chatReply?.let { reply ->
-                            OutlinedCard(
-                                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
-                            ) {
-                                Text(text = reply, modifier = Modifier.padding(12.dp))
+                        OutlinedCard(
+                            colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            if (viewModel.isThinking) {
+                                ThinkingIndicator()
+                            } else {
+                                viewModel.chatReply?.let { reply ->
+                                    Text(text = reply, modifier = Modifier.padding(12.dp))
+                                }
                             }
                         }
                     }
@@ -531,6 +529,7 @@ fun Lesson1Screen(
     viewModel: MainViewModel,
     onBack: () -> Unit,
     onAnswersClick: () -> Unit,
+    onHomeClick: () -> Unit,
     onLesson1Click: () -> Unit,
     onLesson2Click: () -> Unit,
     onLesson3Click: () -> Unit,
@@ -563,35 +562,19 @@ fun Lesson1Screen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     // Titelmenu (alleen visueel/plaatsvervangend hier)
-                    var menuOpen by rememberSaveable { mutableStateOf(false) }
-                    Box {
-                        Text(
-                            text = "Menu",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.clickable { menuOpen = true }
-                        )
-                        DropdownMenu(
-                            expanded = menuOpen,
-                            onDismissRequest = { menuOpen = false }
-                        ) {
-                            DropdownMenuItem(text = { Text("Les 1") }, onClick = {
-                                menuOpen = false
-                                onLesson1Click()
-                            })
-                            DropdownMenuItem(text = { Text("Les 2") }, onClick = {
-                                menuOpen = false
-                                onLesson2Click()
-                            })
-                            DropdownMenuItem(text = { Text("Les 3") }, onClick = {
-                                menuOpen = false
-                                onLesson3Click()
-                            })
-                            DropdownMenuItem(text = { Text("Les 4") }, onClick = {
-                                menuOpen = false
-                                onLesson4Click()
-                            })
-                        }
-                    }
+                    NavigationSegmentedButtons(
+                        currentSelection = "Les 1",
+                        onNavigate = { option ->
+                            when (option) {
+                                "Home" -> onHomeClick()
+                                "Les 1" -> onLesson1Click()
+                                "Les 2" -> onLesson2Click()
+                                "Les 3" -> onLesson3Click()
+                                "Les 4" -> onLesson4Click()
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
 
                     // Overflow menu met lokale acties (geen navigatie hier, conform minimale wijziging)
                     var overflowOpen by rememberSaveable { mutableStateOf(false) }
@@ -636,17 +619,21 @@ fun Lesson1Screen(
                 ) {
                     // Laatste reply boven de prompt
                     // Les 1–4: Fade in/out animatie (AnimatedVisibility)
-                    val showReply = !viewModel.isReplyHidden && viewModel.chatReply != null
+                    val showReply = !viewModel.isReplyHidden && (viewModel.chatReply != null || viewModel.isThinking)
                     AnimatedVisibility(
                         visible = showReply,
                         enter = fadeIn() + expandVertically(),
                         exit = fadeOut() + shrinkVertically()
                     ) {
-                        viewModel.chatReply?.let { reply ->
-                            OutlinedCard(
-                                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
-                            ) {
-                                Text(text = reply, modifier = Modifier.padding(12.dp))
+                        OutlinedCard(
+                            colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            if (viewModel.isThinking) {
+                                ThinkingIndicator()
+                            } else {
+                                viewModel.chatReply?.let { reply ->
+                                    Text(text = reply, modifier = Modifier.padding(12.dp))
+                                }
                             }
                         }
                     }
@@ -674,6 +661,7 @@ fun Lesson1Screen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -785,6 +773,7 @@ fun Lesson4Screen(
     viewModel: MainViewModel,
     onBack: () -> Unit,
     onAnswersClick: () -> Unit,
+    onHomeClick: () -> Unit,
     onLesson1Click: () -> Unit,
     onLesson2Click: () -> Unit,
     onLesson3Click: () -> Unit,
@@ -810,35 +799,19 @@ fun Lesson4Screen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     // Titelmenu
-                    var menuOpen by rememberSaveable { mutableStateOf(false) }
-                    Box {
-                        Text(
-                            text = "Menu",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.clickable { menuOpen = true }
-                        )
-                        DropdownMenu(
-                            expanded = menuOpen,
-                            onDismissRequest = { menuOpen = false }
-                        ) {
-                            DropdownMenuItem(text = { Text("Les 1") }, onClick = {
-                                menuOpen = false
-                                onLesson1Click()
-                            })
-                            DropdownMenuItem(text = { Text("Les 2") }, onClick = {
-                                menuOpen = false
-                                onLesson2Click()
-                            })
-                            DropdownMenuItem(text = { Text("Les 3") }, onClick = {
-                                menuOpen = false
-                                onLesson3Click()
-                            })
-                            DropdownMenuItem(text = { Text("Les 4") }, onClick = {
-                                menuOpen = false
-                                onLesson4Click()
-                            })
-                        }
-                    }
+                    NavigationSegmentedButtons(
+                        currentSelection = "Les 4",
+                        onNavigate = { option ->
+                            when (option) {
+                                "Home" -> onHomeClick()
+                                "Les 1" -> onLesson1Click()
+                                "Les 2" -> onLesson2Click()
+                                "Les 3" -> onLesson3Click()
+                                "Les 4" -> onLesson4Click()
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
 
                     // Overflow menu
                     var overflowOpen by rememberSaveable { mutableStateOf(false) }
@@ -882,17 +855,21 @@ fun Lesson4Screen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     // Les 1–4: Fade in/out animatie (AnimatedVisibility)
-                    val showReply = !viewModel.isReplyHidden && viewModel.chatReply != null
+                    val showReply = !viewModel.isReplyHidden && (viewModel.chatReply != null || viewModel.isThinking)
                     AnimatedVisibility(
                         visible = showReply,
                         enter = fadeIn() + expandVertically(),
                         exit = fadeOut() + shrinkVertically()
                     ) {
-                        viewModel.chatReply?.let { reply ->
-                            OutlinedCard(
-                                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
-                            ) {
-                                Text(text = reply, modifier = Modifier.padding(12.dp))
+                        OutlinedCard(
+                            colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            if (viewModel.isThinking) {
+                                ThinkingIndicator()
+                            } else {
+                                viewModel.chatReply?.let { reply ->
+                                    Text(text = reply, modifier = Modifier.padding(12.dp))
+                                }
                             }
                         }
                     }
@@ -955,6 +932,7 @@ fun Lesson2Screen(
     viewModel: MainViewModel,
     onBack: () -> Unit,
     onAnswersClick: () -> Unit,
+    onHomeClick: () -> Unit,
     onLesson1Click: () -> Unit,
     onLesson3Click: () -> Unit,
     onLesson4Click: () -> Unit
@@ -977,32 +955,19 @@ fun Lesson2Screen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     // Titelmenu
-                    var menuOpen by rememberSaveable { mutableStateOf(false) }
-                    Box {
-                        Text(
-                            text = "Menu",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.clickable { menuOpen = true }
-                        )
-                        DropdownMenu(
-                            expanded = menuOpen,
-                            onDismissRequest = { menuOpen = false }
-                        ) {
-                            DropdownMenuItem(text = { Text("Les 1") }, onClick = {
-                                menuOpen = false
-                                onLesson1Click()
-                            })
-                            DropdownMenuItem(text = { Text("Les 2") }, onClick = { menuOpen = false })
-                            DropdownMenuItem(text = { Text("Les 3") }, onClick = {
-                                menuOpen = false
-                                onLesson3Click()
-                            })
-                            DropdownMenuItem(text = { Text("Les 4") }, onClick = {
-                                menuOpen = false
-                                onLesson4Click()
-                            })
-                        }
-                    }
+                    NavigationSegmentedButtons(
+                        currentSelection = "Les 2",
+                        onNavigate = { option ->
+                            when (option) {
+                                "Home" -> onHomeClick()
+                                "Les 1" -> onLesson1Click()
+                                "Les 2" -> { /* Already here */ }
+                                "Les 3" -> onLesson3Click()
+                                "Les 4" -> onLesson4Click()
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
 
                     // Overflow menu
                     var overflowOpen by rememberSaveable { mutableStateOf(false) }
@@ -1044,17 +1009,22 @@ fun Lesson2Screen(
                         .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val showReply = !viewModel.isReplyHidden && viewModel.chatReply != null
+                    // Les 1–4: Fade in/out animatie (AnimatedVisibility)
+                    val showReply = !viewModel.isReplyHidden && (viewModel.chatReply != null || viewModel.isThinking)
                     AnimatedVisibility(
                         visible = showReply,
                         enter = fadeIn() + expandVertically(),
                         exit = fadeOut() + shrinkVertically()
                     ) {
-                        viewModel.chatReply?.let { reply ->
-                            OutlinedCard(
-                                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
-                            ) {
-                                Text(text = reply, modifier = Modifier.padding(12.dp))
+                        OutlinedCard(
+                            colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            if (viewModel.isThinking) {
+                                ThinkingIndicator()
+                            } else {
+                                viewModel.chatReply?.let { reply ->
+                                    Text(text = reply, modifier = Modifier.padding(12.dp))
+                                }
                             }
                         }
                     }
@@ -1162,6 +1132,7 @@ fun Lesson3Screen(
     viewModel: MainViewModel,
     onBack: () -> Unit,
     onAnswersClick: () -> Unit,
+    onHomeClick: () -> Unit,
     onLesson1Click: () -> Unit,
     onLesson2Click: () -> Unit,
     onLesson4Click: () -> Unit
@@ -1182,32 +1153,19 @@ fun Lesson3Screen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    var menuOpen by rememberSaveable { mutableStateOf(false) }
-                    Box {
-                        Text(
-                            text = "Menu",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.clickable { menuOpen = true }
-                        )
-                        DropdownMenu(
-                            expanded = menuOpen,
-                            onDismissRequest = { menuOpen = false }
-                        ) {
-                            DropdownMenuItem(text = { Text("Les 1") }, onClick = {
-                                menuOpen = false
-                                onLesson1Click()
-                            })
-                            DropdownMenuItem(text = { Text("Les 2") }, onClick = {
-                                menuOpen = false
-                                onLesson2Click()
-                            })
-                            DropdownMenuItem(text = { Text("Les 3") }, onClick = { menuOpen = false })
-                            DropdownMenuItem(text = { Text("Les 4") }, onClick = {
-                                menuOpen = false
-                                onLesson4Click()
-                            })
-                        }
-                    }
+                    NavigationSegmentedButtons(
+                        currentSelection = "Les 3",
+                        onNavigate = { option ->
+                            when (option) {
+                                "Home" -> onHomeClick()
+                                "Les 1" -> onLesson1Click()
+                                "Les 2" -> onLesson2Click()
+                                "Les 3" -> { /* Already here */ }
+                                "Les 4" -> onLesson4Click()
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
 
                     var overflowOpen by rememberSaveable { mutableStateOf(false) }
                     Box {
@@ -1248,17 +1206,22 @@ fun Lesson3Screen(
                         .padding(12.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    val showReply = !viewModel.isReplyHidden && viewModel.chatReply != null
+                    // Les 1–4: Fade in/out animatie (AnimatedVisibility)
+                    val showReply = !viewModel.isReplyHidden && (viewModel.chatReply != null || viewModel.isThinking)
                     AnimatedVisibility(
                         visible = showReply,
                         enter = fadeIn() + expandVertically(),
                         exit = fadeOut() + shrinkVertically()
                     ) {
-                        viewModel.chatReply?.let { reply ->
-                            OutlinedCard(
-                                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
-                            ) {
-                                Text(text = reply, modifier = Modifier.padding(12.dp))
+                        OutlinedCard(
+                            colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+                        ) {
+                            if (viewModel.isThinking) {
+                                ThinkingIndicator()
+                            } else {
+                                viewModel.chatReply?.let { reply ->
+                                    Text(text = reply, modifier = Modifier.padding(12.dp))
+                                }
                             }
                         }
                     }
@@ -1386,6 +1349,38 @@ fun Lesson3Screen(
                     }
                 }
             }
+        }
+    }
+}
+
+// COMPONENT: ThinkingIndicator (Les 1-4 Animation)
+@Composable
+fun ThinkingIndicator() {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text("Thinking")
+        Spacer(modifier = Modifier.width(4.dp))
+
+        val infiniteTransition = rememberInfiniteTransition(label = "dots")
+
+        val dots = listOf(0, 1, 2)
+
+        dots.forEach { index ->
+            val offset by infiniteTransition.animateFloat(
+                initialValue = 0f,
+                targetValue = -10f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(300, easing = FastOutLinearInEasing),
+                    repeatMode = RepeatMode.Reverse,
+                    initialStartOffset = StartOffset(index * 100)
+                ),
+                label = "dot$index"
+            )
+
+            Text(
+                text = ".",
+                modifier = Modifier.offset(y = offset.dp),
+                style = MaterialTheme.typography.titleLarge
+            )
         }
     }
 }
