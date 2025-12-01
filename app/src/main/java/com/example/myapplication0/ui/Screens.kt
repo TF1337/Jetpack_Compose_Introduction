@@ -4,6 +4,8 @@
 // Alles in deze package bevat uitsluitend schermen en visuele componenten.
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 // `clickable` maakt een UI-element aanklikbaar en koppelt er een actie aan.
 
 import androidx.compose.foundation.layout.*
@@ -112,145 +114,238 @@ fun ListScreen(
     var counter by rememberSaveable { mutableIntStateOf(0) }
 
     // UI-toelichtingen ("spraakbubbles") per knop. Klik toggelt zichtbaar/onzichtbaar.
-    var showCounterInfo by rememberSaveable { mutableStateOf(false) }
-    var showResetInfo by rememberSaveable { mutableStateOf(false) }
-    var showToggleReplyInfo by rememberSaveable { mutableStateOf(false) }
-    var showAnswersInfo by rememberSaveable { mutableStateOf(false) }
+    // Minimalistische menu-toggle + uitleg in het midden van het scherm
+    var menuExpanded by rememberSaveable { mutableStateOf(false) } // standaard DICHT (per jouw wens)
+
+    // Welke uitleg moet in het midden (content) getoond worden? null = niets
+    var selectedInfo by rememberSaveable { mutableStateOf<String?>(null) }
+
+    // Klein hulpfunctietje om dezelfde knop 2x te kunnen klikken → uitleg aan/uit
+    fun toggleInfo(key: String) {
+        selectedInfo = if (selectedInfo == key) null else key
+    }
+
+    // Event-bridge van header → bottomBar voor reset van de prompt (les 1: lokale state)
+    var resetTick by rememberSaveable { mutableIntStateOf(0) }
 
     // Les 1–3: eenvoudige UI-event → UI-presentatie (verberg/toon antwoord)
     // We houden het bij lokale UI-state; de ViewModel blijft onaangetast.
     var hideReply by rememberSaveable { mutableStateOf(false) }
 
-    // Scaffold is een standaard Material-layout met vaste plekken
-    // voor content, snackbar, etc. TopBar is volledig verwijderd (eis 1).
-    Scaffold { padding ->
-        // Box wordt hier gebruikt als container voor de inhoud
-        Box(modifier = Modifier.padding(padding).fillMaxSize()) {
-
-            // Eenvoudige chat-sectie + didactische knoppen bovenaan het scherm
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+    // Scaffold is een standaard Material-layout met vaste plekken voor topBar, content en bottomBar.
+    // We plaatsen nu de knoppen (met uitleg) in de topBar en de chatbot in de bottomBar.
+    Scaffold(
+        topBar = {
+            // Vaste header met TopAppBar-principe: titel fungeert als "menu" (anchor voor dropdown)
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.statusBarsPadding()
             ) {
-                // 1) Click Counter (Les 1)
-                Button(
-                    onClick = {
-                        counter++                // State & recomposition (Les 1)
-                        showCounterInfo = !showCounterInfo // Toon/verberg uitleg
-                    }
-                ) { Text("Click Counter: $counter") }
+                // Compacte hoogte voor een appbar-gevoel
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // TITEL als navigatie/menuknop (anchor voor DropdownMenu)
+                    var menuOpen by rememberSaveable { mutableStateOf(false) }
 
-                if (showCounterInfo) {
-                    // Spraakbubble met uitleg
-                    Card(shape = MaterialTheme.shapes.medium) {
+                    Box {
                         Text(
-                            text = "Les 1: State & recomposition — elke klik verhoogt de teller en triggert een recomposition.",
+                            text = "Menu", // Titel fungeert als menu-trigger (voorheen "EzChat")
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.clickable { menuOpen = true }
+                        )
+
+                        DropdownMenu(
+                            expanded = menuOpen,
+                            onDismissRequest = { menuOpen = false }
+                        ) {
+                            // Menu-items zonder functionaliteit (alle acties staan in het overflow-menu)
+                            DropdownMenuItem(
+                                text = { Text("Les 1") },
+                                onClick = { menuOpen = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Les 2") },
+                                onClick = { menuOpen = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Les 3") },
+                                onClick = { menuOpen = false }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Les 4") },
+                                onClick = { menuOpen = false }
+                            )
+                            // Let op: echte acties blijven in het overflow-menu (⋮), conform afspraak.
+                        }
+                    }
+
+                    // ACTIONS (drie puntjes) — nu ook een DropdownMenu, zoals gevraagd
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        var overflowOpen by rememberSaveable { mutableStateOf(false) }
+
+                        Box {
+                            IconButton(onClick = { overflowOpen = true }) {
+                                // Gebruik Unicode 'Vertical Ellipsis' om geen extra icon-dependency te vereisen
+                                Text("⋮", style = MaterialTheme.typography.titleLarge)
+                            }
+
+                            DropdownMenu(
+                                expanded = overflowOpen,
+                                onDismissRequest = { overflowOpen = false }
+                            ) {
+                                // Zelfde acties ook in het overflow-menu, conform verzoek
+                                // 1) Click Counter (Les 1)
+                                DropdownMenuItem(
+                                    text = { Text("Click Counter (" + counter + ")") },
+                                    onClick = {
+                                        overflowOpen = false
+                                        counter++
+                                        toggleInfo("counter")
+                                    }
+                                )
+
+                                // 2) Reset invoer
+                                DropdownMenuItem(
+                                    text = { Text("Reset invoer") },
+                                    onClick = {
+                                        overflowOpen = false
+                                        resetTick++
+                                        toggleInfo("reset")
+                                    }
+                                )
+
+                                // 3) Verberg/Toon antwoord
+                                DropdownMenuItem(
+                                    text = { Text(if (hideReply) "Toon antwoord" else "Verberg antwoord") },
+                                    onClick = {
+                                        overflowOpen = false
+                                        hideReply = !hideReply
+                                        toggleInfo("toggle")
+                                    }
+                                )
+
+                                // 4) Geschiedenis (navigatie)
+                                DropdownMenuItem(
+                                    text = { Text("Geschiedenis") },
+                                    onClick = {
+                                        overflowOpen = false
+                                        // Didactisch: markeer de juiste uitleg voordat we navigeren
+                                        selectedInfo = "answers"
+                                        onAnswersClick()
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        bottomBar = {
+            // Chatbot vast onderin: reply boven de prompt; prompt staat tegen de rand van de bottomBar
+            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        // Laat alleen de bottom-bar reageren op IME + systeem navigatie insets
+                        .imePadding()
+                        .navigationBarsPadding()
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Toon de laatste reply (of foutmelding) — boven het invoerveld
+                    viewModel.chatReply?.let { reply ->
+                        if (!hideReply) {
+                            Text(text = reply)
+                        }
+                    }
+
+                    // Prompt + verzendknop onderaan (staat hiermee visueel het dichtst bij de bottom bar rand)
+                    var prompt by rememberSaveable { mutableStateOf("") }
+
+                    // Reset invoer wanneer resetTick wijzigt (event uit de header)
+                    LaunchedEffect(resetTick) {
+                        if (resetTick > 0) prompt = ""
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = prompt,
+                            onValueChange = { prompt = it },
+                            label = { Text("Vraag aan EzChatbot") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Button(onClick = { viewModel.sendPrompt("http://10.0.2.2:8080", prompt) }) {
+                            Text("Ask")
+                        }
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
+        // CONTENT: uitleg in het midden + fotolijst. Header/footer blijven vast staan.
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            // Centrale uitlegkaart op basis van geselecteerde knop
+            when (selectedInfo) {
+                "counter" -> {
+                    Card(shape = MaterialTheme.shapes.medium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                        Text(
+                            text = "Click Counter → Les 1: State & recomposition — elke klik verhoogt de teller en triggert een recomposition.",
                             modifier = Modifier.padding(12.dp)
                         )
                     }
                 }
-
-                // 2) Reset invoer (maakt alleen de lokale prompt leeg)
-                Button(
-                    onClick = {
-                        // Wordt hieronder op de daadwerkelijke prompt toegepast
-                        showResetInfo = !showResetInfo
-                    }
-                ) { Text("Reset invoer") }
-
-                if (showResetInfo) {
-                    Card(shape = MaterialTheme.shapes.medium) {
+                "reset" -> {
+                    Card(shape = MaterialTheme.shapes.medium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                         Text(
-                            text = "Les 1: Local state & rememberSaveable — we resetten alleen de lokale invoer.",
+                            text = "Reset Invoer → Les 1: Local state & rememberSaveable — we resetten alleen de lokale invoer (prompt).",
                             modifier = Modifier.padding(12.dp)
                         )
                     }
                 }
-
-                // 3) Verberg/Toon antwoord (UI-event → UI-presentatie)
-                Button(
-                    onClick = {
-                        hideReply = !hideReply
-                        showToggleReplyInfo = !showToggleReplyInfo
-                    }
-                ) { Text(if (hideReply) "Toon antwoord" else "Verberg antwoord") }
-
-                if (showToggleReplyInfo) {
-                    Card(shape = MaterialTheme.shapes.medium) {
+                "toggle" -> {
+                    Card(shape = MaterialTheme.shapes.medium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                         Text(
-                            text = "Les 1–3: Events → UI — een klik toggelt lokale UI-state die bepaalt of het antwoord zichtbaar is.",
+                            text = "Verberg/Toon antwoord → Les 1–3: events → UI — een klik toggelt lokale UI‑state die de zichtbaarheid bepaalt.",
                             modifier = Modifier.padding(12.dp)
                         )
                     }
                 }
-
-                // 4) Antwoorden
-                // Navigatie naar een apart scherm waar je alle opgeslagen antwoorden ziet (met ID & idee)
-                Button(onClick = onAnswersClick) { Text("Antwoorden") }
-                // Didactische toelichting blijft beschikbaar via toggle, maar we navigeren direct met de knop.
-                if (showAnswersInfo) {
-                    Card(shape = MaterialTheme.shapes.medium) {
+                "answers" -> {
+                    Card(shape = MaterialTheme.shapes.medium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                         Text(
-                            text = "Les 4: Navigatie — 'Antwoorden' opent een nieuw scherm met alle eerder opgeslagen antwoorden (met ID & idee).",
+                            text = "Geschiedenis → Les 4: navigatie — opent een nieuw scherm met alle eerder opgeslagen antwoorden (ID & idee). Keer je terug, dan blijft deze uitleg zichtbaar.",
                             modifier = Modifier.padding(12.dp)
                         )
                     }
                 }
-
-                var prompt by remember { mutableStateOf("") }
-                OutlinedTextField(
-                    value = prompt,
-                    onValueChange = { prompt = it },
-                    label = { Text("Vraag aan EzChatbot") },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Spacer(Modifier.height(8.dp))
-                // Reset invoer actie (koppelen aan de knop hierboven)
-                LaunchedEffect(showResetInfo) {
-                    // Als de gebruiker op "Reset invoer" klikt, maken we de prompt leeg.
-                    // We koppelen dit via LaunchedEffect om de logica in dezelfde scope te houden
-                    // zonder extra state-variabelen aan te maken.
-                    if (showResetInfo) {
-                        prompt = ""
-                    }
-                }
-
-                Button(onClick = { viewModel.sendPrompt("http://10.0.2.2:8080", prompt) }) {
-                    Text("Ask EzChatBot")
-                }
-                // Toon de laatste reply (of foutmelding)
-                viewModel.chatReply?.let { reply ->
-                    Spacer(Modifier.height(8.dp))
-                    if (!hideReply) {
-                        Text(text = reply)
-                    }
-                }
-                Spacer(Modifier.height(16.dp))
+                else -> { /* geen uitleg tonen */ }
             }
 
-            // when is een Kotlin controle-structuur.
-            // Hiermee bepalen we welk UI-scherm we tonen op basis van de state.
-            when (val s = state) {
+            // Lijst vult de resterende ruimte
+            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                when (val s = state) {
+                    is PhotoUiState.Loading ->
+                        CircularProgressIndicator(Modifier.align(Alignment.Center))
 
-                // Tijdens laden tonen we een draaipictogram
-                is PhotoUiState.Loading ->
-                    CircularProgressIndicator(Modifier.align(Alignment.Center))
+                    is PhotoUiState.Error -> Text(
+                        text = s.message,
+                        modifier = Modifier.align(Alignment.Center).padding(16.dp),
+                        color = MaterialTheme.colorScheme.error
+                    )
 
-                // Bij een fout tonen we de foutmelding in de foutkleur
-                is PhotoUiState.Error -> Text(
-                    text = s.message,
-                    modifier = Modifier.align(Alignment.Center).padding(16.dp),
-                    color = MaterialTheme.colorScheme.error
-                )
-
-                // Bij succes tonen we de lijst met foto's
-                is PhotoUiState.Success -> {
-                    // Voeg extra top-padding toe zodat de lijst niet onder de didactische sectie valt
-                    // Let op: deze waarde is puur presentational en kan afhankelijk van de zichtbare
-                    // spraakbubbles variëren. Voor de les houden we het eenvoudig en statisch.
-                    Column(modifier = Modifier.fillMaxSize().padding(top = 240.dp)) {
+                    is PhotoUiState.Success -> {
                         PhotoList(
                             photos = s.photos,
                             onItemClick = onItemClick
@@ -372,32 +467,63 @@ fun AnswersScreen(
 ) {
     val answers = viewModel.answers
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    // Gebruik een Scaffold om systeem-insets (status- en navigatiebalk) netjes af te handelen.
+    // We voegen een TopAppBar en BottomAppBar toe met een zichtbare kleur, puur ter illustratie.
+    // De "Terug"-knop blijft bewust in de content, niet in de header/footer.
+    Scaffold(
+        topBar = {
+            // Geen experimentele API: eenvoudige Surface als visuele TopBar
+            Surface(color = MaterialTheme.colorScheme.primaryContainer) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                ) {}
+            }
+        },
+        bottomBar = {
+            // Geen experimentele API: eenvoudige Surface als visuele BottomBar
+            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                ) {}
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding) // zorgt dat content onder top/bottombar en buiten systeem-insets valt
+                .padding(16.dp)
+        ) {
 
-        // Terug-knop naar vorig scherm
-        Button(onClick = onBack) { Text("Terug") }
+            // Terug-knop naar vorig scherm (blijft in de content)
+            Button(onClick = onBack) { Text("Terug") }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Text(
-            text = "Antwoord geschiedenis",
-            style = MaterialTheme.typography.headlineMedium
-        )
+            Text(
+                text = "Antwoord geschiedenis",
+                style = MaterialTheme.typography.headlineMedium
+            )
 
-        Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        if (answers.isEmpty()) {
-            Text("Nog geen antwoorden opgeslagen.")
-        } else {
-            LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(answers, key = { it.id }) { a ->
-                    Card(shape = MaterialTheme.shapes.medium) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(text = "ID: ${a.id}")
-                            Spacer(Modifier.height(4.dp))
-                            Text(text = "Idee: ${a.idea}")
-                            Spacer(Modifier.height(4.dp))
-                            Text(text = a.text)
+            if (answers.isEmpty()) {
+                Text("Nog geen antwoorden opgeslagen.")
+            } else {
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    items(answers, key = { it.id }) { a ->
+                        Card(shape = MaterialTheme.shapes.medium) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(text = "ID: ${a.id}")
+                                Spacer(Modifier.height(4.dp))
+                                Text(text = "Idee: ${a.idea}")
+                                Spacer(Modifier.height(4.dp))
+                                Text(text = a.text)
+                            }
                         }
                     }
                 }
