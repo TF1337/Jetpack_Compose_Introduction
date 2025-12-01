@@ -226,6 +226,28 @@ class MainViewModel : ViewModel() {
         lesson1ColorClicks++
     }
 
+    // -------------------------------------------------------------
+    // LES 2: LAYOUT SELECTIE (SSOT)
+    // -------------------------------------------------------------
+    // Bewaar de gekozen layout-modus (Column/Row) in de ViewModel.
+    var lesson2Layout: String by mutableStateOf("Column")
+        private set
+
+    fun setLesson2LayoutChoice(layout: String) {
+        lesson2Layout = layout
+    }
+
+    // -------------------------------------------------------------
+    // LES 3: LIST TYPE SELECTIE (SSOT)
+    // -------------------------------------------------------------
+    // Bewaar de gekozen lijst-modus (Lazy/Scroll) in de ViewModel.
+    var lesson3ListType: String by mutableStateOf("LazyColumn")
+        private set
+
+    fun setLesson3ListTypeChoice(type: String) {
+        lesson3ListType = type
+    }
+
     // FUNCTIE: loadPhotos
     // Deze functie start het ophalen van data van het internet.
     fun loadPhotos() {

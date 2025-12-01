@@ -33,6 +33,8 @@ import com.example.myapplication0.ui.DetailScreen
 import com.example.myapplication0.ui.ListScreen
 import com.example.myapplication0.ui.AnswersScreen
 import com.example.myapplication0.ui.Lesson1Screen
+import com.example.myapplication0.ui.Lesson2Screen
+import com.example.myapplication0.ui.Lesson3Screen
 import com.example.myapplication0.ui.Lesson4Screen
 // Het lijstscherm van de app.
 
@@ -93,6 +95,8 @@ fun AppNavigation() {
                 },
                 onAnswersClick = { navController.navigate("answers") },
                 onLesson1Click = { navController.navigate("lesson1") },
+                onLesson2Click = { navController.navigate("lesson2") },
+                onLesson3Click = { navController.navigate("lesson3") },
                 onLesson4Click = { navController.navigate("lesson4") }
             )
         }
@@ -141,6 +145,33 @@ fun AppNavigation() {
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
                 onAnswersClick = { navController.navigate("answers") },
+                onLesson1Click = { }, // Doe niets als we al op les 1 zijn (of herlaad)
+                onLesson2Click = { navController.navigate("lesson2") },
+                onLesson3Click = { navController.navigate("lesson3") },
+                onLesson4Click = { navController.navigate("lesson4") }
+            )
+        }
+
+        // ROUTE: LES 2 SCHERM
+        composable("lesson2") {
+            Lesson2Screen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onAnswersClick = { navController.navigate("answers") },
+                onLesson1Click = { navController.navigate("lesson1") },
+                onLesson3Click = { navController.navigate("lesson3") },
+                onLesson4Click = { navController.navigate("lesson4") }
+            )
+        }
+
+        // ROUTE: LES 3 SCHERM
+        composable("lesson3") {
+            Lesson3Screen(
+                viewModel = viewModel,
+                onBack = { navController.popBackStack() },
+                onAnswersClick = { navController.navigate("answers") },
+                onLesson1Click = { navController.navigate("lesson1") },
+                onLesson2Click = { navController.navigate("lesson2") },
                 onLesson4Click = { navController.navigate("lesson4") }
             )
         }
@@ -151,7 +182,10 @@ fun AppNavigation() {
                 viewModel = viewModel,
                 onBack = { navController.popBackStack() },
                 onAnswersClick = { navController.navigate("answers") },
-                onLesson1Click = { navController.navigate("lesson1") }
+                onLesson1Click = { navController.navigate("lesson1") },
+                onLesson2Click = { navController.navigate("lesson2") },
+                onLesson3Click = { navController.navigate("lesson3") },
+                onLesson4Click = { }
             )
         }
     }

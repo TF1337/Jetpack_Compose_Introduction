@@ -110,6 +110,8 @@ fun ListScreen(
     onItemClick: (Int) -> Unit,
     onAnswersClick: () -> Unit, // Les 4: navigatie naar antwoorden-overzicht (state hoisted)
     onLesson1Click: () -> Unit, // Nieuwe route voor Les 1 scherm
+    onLesson2Click: () -> Unit, // Nieuwe route voor Les 2 scherm
+    onLesson3Click: () -> Unit, // Nieuwe route voor Les 3 scherm
     onLesson4Click: () -> Unit  // Nieuwe route voor Les 4 scherm
 ) {
     // STATE OBSERVATION
@@ -183,11 +185,17 @@ fun ListScreen(
                             )
                             DropdownMenuItem(
                                 text = { Text("Les 2") },
-                                onClick = { menuOpen = false }
+                                onClick = {
+                                    menuOpen = false
+                                    onLesson2Click()
+                                }
                             )
                             DropdownMenuItem(
                                 text = { Text("Les 3") },
-                                onClick = { menuOpen = false }
+                                onClick = {
+                                    menuOpen = false
+                                    onLesson3Click()
+                                }
                             )
                             DropdownMenuItem(
                                 text = { Text("Les 4") },
@@ -523,6 +531,9 @@ fun Lesson1Screen(
     viewModel: MainViewModel,
     onBack: () -> Unit,
     onAnswersClick: () -> Unit,
+    onLesson1Click: () -> Unit,
+    onLesson2Click: () -> Unit,
+    onLesson3Click: () -> Unit,
     onLesson4Click: () -> Unit
 ) {
     // Les 1: Click Counter is nu ge-hoist naar de ViewModel (SSOT)
@@ -563,9 +574,18 @@ fun Lesson1Screen(
                             expanded = menuOpen,
                             onDismissRequest = { menuOpen = false }
                         ) {
-                            DropdownMenuItem(text = { Text("Les 1") }, onClick = { menuOpen = false })
-                            DropdownMenuItem(text = { Text("Les 2") }, onClick = { menuOpen = false })
-                            DropdownMenuItem(text = { Text("Les 3") }, onClick = { menuOpen = false })
+                            DropdownMenuItem(text = { Text("Les 1") }, onClick = {
+                                menuOpen = false
+                                onLesson1Click()
+                            })
+                            DropdownMenuItem(text = { Text("Les 2") }, onClick = {
+                                menuOpen = false
+                                onLesson2Click()
+                            })
+                            DropdownMenuItem(text = { Text("Les 3") }, onClick = {
+                                menuOpen = false
+                                onLesson3Click()
+                            })
                             DropdownMenuItem(text = { Text("Les 4") }, onClick = {
                                 menuOpen = false
                                 onLesson4Click()
@@ -715,42 +735,41 @@ fun Lesson1Screen(
             }
 
             // Eén gedeeld uitlegveld op een vaste plek (voorkomt layout‑verschuivingen)
-            Card(shape = MaterialTheme.shapes.medium) {
-                Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    when (selectedInfo) {
-                        "counter" -> Text(
-                            text = "Click Counter → Les 1: lokale state (rememberSaveable) en recomposition: elke klik verandert de Int‑state en hertekent de UI."
-                        )
-                        "color" -> Text(
-                            text = "Kleur wisselen → Les 1: appearance via state in de ViewModel (SSOT). Een Boolean bepaalt de kleur (Blauw ↔ Rood) en triggert recomposition."
-                        )
-                        "reset" -> Text(
-                            text = "Reset Invoer → Les 1: Local state & rememberSaveable — we resetten alleen de lokale invoer (prompt) op dit scherm."
-                        )
-                        "toggle" -> Text(
-                            text = "Verberg/Toon antwoord → Les 1–3: events → UI en SSOT. De zichtbaarheid wordt geregeld in de ViewModel."
-                        )
-                        "ssot" -> Text(
-                            text = "Single Source of Truth → Les 1–4: we bewaren de Click Counter in de ViewModel. Zo blijft de waarde bestaan bij navigatie/rotatie, en is de ViewModel de bron waar de UI naar kijkt."
-                        )
-                        else -> Text(
-                            text = "Kies een actie (Click Counter of Kleur wisselen) om de uitleg te tonen."
-                        )
-                    }
+            if (selectedInfo != null) {
+                Card(shape = MaterialTheme.shapes.medium) {
+                    Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        when (selectedInfo) {
+                            "counter" -> Text(
+                                text = "Click Counter → Les 1: lokale state (rememberSaveable) en recomposition: elke klik verandert de Int‑state en hertekent de UI."
+                            )
+                            "color" -> Text(
+                                text = "Kleur wisselen → Les 1: appearance via state in de ViewModel (SSOT). Een Boolean bepaalt de kleur (Blauw ↔ Rood) en triggert recomposition."
+                            )
+                            "reset" -> Text(
+                                text = "Reset Invoer → Les 1: Local state & rememberSaveable — we resetten alleen de lokale invoer (prompt) op dit scherm."
+                            )
+                            "toggle" -> Text(
+                                text = "Verberg/Toon antwoord → Les 1–3: events → UI en SSOT. De zichtbaarheid wordt geregeld in de ViewModel."
+                            )
+                            "ssot" -> Text(
+                                text = "Single Source of Truth → Les 1–4: we bewaren de Click Counter in de ViewModel. Zo blijft de waarde bestaan bij navigatie/rotatie, en is de ViewModel de bron waar de UI naar kijkt."
+                            )
+                        }
 
-                    // Klein demovlakje dat de huidige kleur laat zien (Blauw = primaryContainer, Rood = errorContainer)
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(24.dp)
-                            .padding(top = 4.dp)
-                            .let { base ->
-                                // Gebruik een Box binnen een Card: we geven de achtergrondkleur met een Surface voor Material-kleuren
-                                base
+                        // Klein demovlakje dat de huidige kleur laat zien (Blauw = primaryContainer, Rood = errorContainer)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(24.dp)
+                                .padding(top = 4.dp)
+                                .let { base ->
+                                    // Gebruik een Box binnen een Card: we geven de achtergrondkleur met een Surface voor Material-kleuren
+                                    base
+                                }
+                        ) {
+                            Surface(color = if (viewModel.lesson1IsBlue) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer) {
+                                Spacer(modifier = Modifier.fillMaxSize())
                             }
-                    ) {
-                        Surface(color = if (viewModel.lesson1IsBlue) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer) {
-                            Spacer(modifier = Modifier.fillMaxSize())
                         }
                     }
                 }
@@ -766,7 +785,10 @@ fun Lesson4Screen(
     viewModel: MainViewModel,
     onBack: () -> Unit,
     onAnswersClick: () -> Unit,
-    onLesson1Click: () -> Unit
+    onLesson1Click: () -> Unit,
+    onLesson2Click: () -> Unit,
+    onLesson3Click: () -> Unit,
+    onLesson4Click: () -> Unit
 ) {
     // Lokaal state-beheer voor uitleg
     var selectedInfo by rememberSaveable { mutableStateOf<String?>(null) }
@@ -803,9 +825,18 @@ fun Lesson4Screen(
                                 menuOpen = false
                                 onLesson1Click()
                             })
-                            DropdownMenuItem(text = { Text("Les 2") }, onClick = { menuOpen = false })
-                            DropdownMenuItem(text = { Text("Les 3") }, onClick = { menuOpen = false })
-                            DropdownMenuItem(text = { Text("Les 4") }, onClick = { menuOpen = false })
+                            DropdownMenuItem(text = { Text("Les 2") }, onClick = {
+                                menuOpen = false
+                                onLesson2Click()
+                            })
+                            DropdownMenuItem(text = { Text("Les 3") }, onClick = {
+                                menuOpen = false
+                                onLesson3Click()
+                            })
+                            DropdownMenuItem(text = { Text("Les 4") }, onClick = {
+                                menuOpen = false
+                                onLesson4Click()
+                            })
                         }
                     }
 
@@ -912,8 +943,448 @@ fun Lesson4Screen(
                         modifier = Modifier.padding(12.dp)
                     )
                 }
-            } else {
-                Text("Klik op Geschiedenis om de navigatie te starten en uitleg te zien.")
+            }
+        }
+    }
+}
+
+// SCREEN: Lesson2Screen
+// Doel: een pagina voor Les 2.
+@Composable
+fun Lesson2Screen(
+    viewModel: MainViewModel,
+    onBack: () -> Unit,
+    onAnswersClick: () -> Unit,
+    onLesson1Click: () -> Unit,
+    onLesson3Click: () -> Unit,
+    onLesson4Click: () -> Unit
+) {
+    // Lokaal state-beheer voor uitleg
+    var selectedInfo by rememberSaveable { mutableStateOf<String?>(null) }
+
+    Scaffold(
+        topBar = {
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.statusBarsPadding()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    // Titelmenu
+                    var menuOpen by rememberSaveable { mutableStateOf(false) }
+                    Box {
+                        Text(
+                            text = "Menu",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.clickable { menuOpen = true }
+                        )
+                        DropdownMenu(
+                            expanded = menuOpen,
+                            onDismissRequest = { menuOpen = false }
+                        ) {
+                            DropdownMenuItem(text = { Text("Les 1") }, onClick = {
+                                menuOpen = false
+                                onLesson1Click()
+                            })
+                            DropdownMenuItem(text = { Text("Les 2") }, onClick = { menuOpen = false })
+                            DropdownMenuItem(text = { Text("Les 3") }, onClick = {
+                                menuOpen = false
+                                onLesson3Click()
+                            })
+                            DropdownMenuItem(text = { Text("Les 4") }, onClick = {
+                                menuOpen = false
+                                onLesson4Click()
+                            })
+                        }
+                    }
+
+                    // Overflow menu
+                    var overflowOpen by rememberSaveable { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { overflowOpen = true }) {
+                            Text("⋮", style = MaterialTheme.typography.titleLarge)
+                        }
+                        DropdownMenu(
+                            expanded = overflowOpen,
+                            onDismissRequest = { overflowOpen = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(if (viewModel.isReplyHidden) "Toon antwoord" else "Verberg antwoord") },
+                                onClick = {
+                                    overflowOpen = false
+                                    viewModel.toggleReplyVisibility()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Geschiedenis") },
+                                onClick = {
+                                    overflowOpen = false
+                                    selectedInfo = "history"
+                                    onAnswersClick()
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        bottomBar = {
+            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .imePadding()
+                        .navigationBarsPadding()
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val showReply = !viewModel.isReplyHidden && viewModel.chatReply != null
+                    AnimatedVisibility(
+                        visible = showReply,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        viewModel.chatReply?.let { reply ->
+                            OutlinedCard(
+                                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            ) {
+                                Text(text = reply, modifier = Modifier.padding(12.dp))
+                            }
+                        }
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = viewModel.chatPrompt,
+                            onValueChange = { viewModel.updatePrompt(it) },
+                            label = { Text("Vraag aan EzChatbot") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Button(onClick = { viewModel.sendPrompt("http://10.0.2.2:8080", viewModel.chatPrompt) }) {
+                            Text("Ask")
+                        }
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Button(onClick = onBack) { Text("Terug") }
+            Text(text = "Les 2 — Layouts", style = MaterialTheme.typography.headlineSmall)
+
+            // Knoppen voor Les 2 (Layouts)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = {
+                        viewModel.setLesson2LayoutChoice("Column")
+                        selectedInfo = "column"
+                    }
+                ) {
+                    // SSOT: We tonen welke modus actief is vanuit de ViewModel
+                    Text("Column (Verticaal)")
+                }
+
+                Button(
+                    onClick = {
+                        viewModel.setLesson2LayoutChoice("Row")
+                        selectedInfo = "row"
+                    }
+                ) {
+                    Text("Row (Horizontaal)")
+                }
+            }
+
+            // Gedeelde uitlegkaart (alleen tonen als er een keuze is gemaakt)
+            if (selectedInfo != null) {
+                Card(shape = MaterialTheme.shapes.medium) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        when (selectedInfo) {
+                            "column" -> Text("Column → Les 2: Layouts — plaatst elementen verticaal onder elkaar (y-as). Gebruik dit voor standaard schermen.")
+                            "row" -> Text("Row → Les 2: Layouts — plaatst elementen horizontaal naast elkaar (x-as). Gebruik dit voor regels met iconen of knoppen.")
+                        }
+
+                        // Visuele demonstratie (balkje)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(60.dp)
+                                .padding(top = 8.dp)
+                        ) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = MaterialTheme.shapes.small,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    if (viewModel.lesson2Layout == "Column") {
+                                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Surface(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.primary, shape = MaterialTheme.shapes.extraSmall) {}
+                                            Surface(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.primary, shape = MaterialTheme.shapes.extraSmall) {}
+                                            Surface(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.primary, shape = MaterialTheme.shapes.extraSmall) {}
+                                        }
+                                    } else {
+                                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                            Surface(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.primary, shape = MaterialTheme.shapes.extraSmall) {}
+                                            Surface(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.primary, shape = MaterialTheme.shapes.extraSmall) {}
+                                            Surface(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.primary, shape = MaterialTheme.shapes.extraSmall) {}
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// SCREEN: Lesson3Screen
+// Doel: een pagina voor Les 3.
+@Composable
+fun Lesson3Screen(
+    viewModel: MainViewModel,
+    onBack: () -> Unit,
+    onAnswersClick: () -> Unit,
+    onLesson1Click: () -> Unit,
+    onLesson2Click: () -> Unit,
+    onLesson4Click: () -> Unit
+) {
+    var selectedInfo by rememberSaveable { mutableStateOf<String?>(null) }
+
+    Scaffold(
+        topBar = {
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.statusBarsPadding()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    var menuOpen by rememberSaveable { mutableStateOf(false) }
+                    Box {
+                        Text(
+                            text = "Menu",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.clickable { menuOpen = true }
+                        )
+                        DropdownMenu(
+                            expanded = menuOpen,
+                            onDismissRequest = { menuOpen = false }
+                        ) {
+                            DropdownMenuItem(text = { Text("Les 1") }, onClick = {
+                                menuOpen = false
+                                onLesson1Click()
+                            })
+                            DropdownMenuItem(text = { Text("Les 2") }, onClick = {
+                                menuOpen = false
+                                onLesson2Click()
+                            })
+                            DropdownMenuItem(text = { Text("Les 3") }, onClick = { menuOpen = false })
+                            DropdownMenuItem(text = { Text("Les 4") }, onClick = {
+                                menuOpen = false
+                                onLesson4Click()
+                            })
+                        }
+                    }
+
+                    var overflowOpen by rememberSaveable { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { overflowOpen = true }) {
+                            Text("⋮", style = MaterialTheme.typography.titleLarge)
+                        }
+                        DropdownMenu(
+                            expanded = overflowOpen,
+                            onDismissRequest = { overflowOpen = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(if (viewModel.isReplyHidden) "Toon antwoord" else "Verberg antwoord") },
+                                onClick = {
+                                    overflowOpen = false
+                                    viewModel.toggleReplyVisibility()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Geschiedenis") },
+                                onClick = {
+                                    overflowOpen = false
+                                    selectedInfo = "history"
+                                    onAnswersClick()
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        bottomBar = {
+            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .imePadding()
+                        .navigationBarsPadding()
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    val showReply = !viewModel.isReplyHidden && viewModel.chatReply != null
+                    AnimatedVisibility(
+                        visible = showReply,
+                        enter = fadeIn() + expandVertically(),
+                        exit = fadeOut() + shrinkVertically()
+                    ) {
+                        viewModel.chatReply?.let { reply ->
+                            OutlinedCard(
+                                colors = CardDefaults.outlinedCardColors(containerColor = MaterialTheme.colorScheme.surface)
+                            ) {
+                                Text(text = reply, modifier = Modifier.padding(12.dp))
+                            }
+                        }
+                    }
+
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        OutlinedTextField(
+                            value = viewModel.chatPrompt,
+                            onValueChange = { viewModel.updatePrompt(it) },
+                            label = { Text("Vraag aan EzChatbot") },
+                            modifier = Modifier.weight(1f)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Button(onClick = { viewModel.sendPrompt("http://10.0.2.2:8080", viewModel.chatPrompt) }) {
+                            Text("Ask")
+                        }
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Button(onClick = onBack) { Text("Terug") }
+            Text(text = "Les 3 — Lists", style = MaterialTheme.typography.headlineSmall)
+
+            // Knoppen voor Les 3 (Lists)
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(
+                    onClick = {
+                        viewModel.setLesson3ListTypeChoice("LazyColumn")
+                        selectedInfo = "lazy"
+                    }
+                ) {
+                    Text("LazyColumn")
+                }
+
+                Button(
+                    onClick = {
+                        viewModel.setLesson3ListTypeChoice("Scroll")
+                        selectedInfo = "scroll"
+                    }
+                ) {
+                    Text("Scroll Modifiers")
+                }
+            }
+
+            // Gedeelde uitlegkaart (alleen tonen als er een keuze is gemaakt)
+            if (selectedInfo != null) {
+                Card(shape = MaterialTheme.shapes.medium) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        when (selectedInfo) {
+                            "lazy" -> Text("LazyColumn → Les 3: Lists — rendert alleen items die op het scherm zichtbaar zijn. Essentieel voor lange lijsten (performance).")
+                            "scroll" -> Text("Scroll Modifiers → Les 3: Lists — maakt een vast blok scrollbaar (bijv. met verticalScroll). Simpel, maar laadt alle content direct.")
+                        }
+
+                        // Visuele demonstratie (balkje)
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(100.dp) // Iets hoger voor lijst-demo
+                                .padding(top = 8.dp)
+                        ) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.surfaceVariant,
+                                shape = MaterialTheme.shapes.small,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                if (viewModel.lesson3ListType == "LazyColumn") {
+                                    // LazyColumn demo: toont items in een echte lazy list
+                                    LazyColumn(
+                                        modifier = Modifier.fillMaxSize().padding(4.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        items(20) { index ->
+                                            Surface(
+                                                modifier = Modifier.fillMaxWidth().height(20.dp),
+                                                color = MaterialTheme.colorScheme.tertiary,
+                                                shape = MaterialTheme.shapes.extraSmall
+                                            ) {
+                                                Box(contentAlignment = Alignment.CenterStart) {
+                                                    Text(
+                                                        text = "Lazy Item ${index + 1}",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.onTertiary,
+                                                        modifier = Modifier.padding(start = 4.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                } else {
+                                    // Scroll demo: toont items in een Column met verticalScroll
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .padding(4.dp)
+                                            .verticalScroll(rememberScrollState()),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        repeat(20) { index ->
+                                            Surface(
+                                                modifier = Modifier.fillMaxWidth().height(20.dp),
+                                                color = MaterialTheme.colorScheme.secondary,
+                                                shape = MaterialTheme.shapes.extraSmall
+                                            ) {
+                                                Box(contentAlignment = Alignment.CenterStart) {
+                                                    Text(
+                                                        text = "Scroll Item ${index + 1}",
+                                                        style = MaterialTheme.typography.labelSmall,
+                                                        color = MaterialTheme.colorScheme.onSecondary,
+                                                        modifier = Modifier.padding(start = 4.dp)
+                                                    )
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
     }
