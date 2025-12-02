@@ -1,60 +1,49 @@
 ﻿package com.example.myapplication0.ui
-// PACKAGE
-// Dit bestand hoort bij de UI-laag van de app.
-// Alles in deze package bevat uitsluitend schermen en visuele componenten.
-
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.horizontalScroll
-// `clickable` maakt een UI-element aanklikbaar en koppelt er een actie aan.
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
-// Animatie-API's voor het in- en uitfaden van UI-elementen.
 import androidx.compose.animation.core.*
-
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-// Bevat layout-componenten zoals Column, Row, Box, Spacer en padding/fill-modifiers.
-
 import androidx.compose.foundation.lazy.LazyColumn
-// `LazyColumn` is een verticale, scrollbare lijst die alleen zichtbare items rendert.
-
 import androidx.compose.foundation.lazy.items
-// `items` wordt gebruikt om een lijst data te koppelen aan een LazyColumn.
-
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.*
-// Material 3 UI-componenten zoals Text, Button, ListItem, Scaffold, etc.
-
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-// Bevat Compose state-mechanismen zoals @Composable, remember en mutableStateOf.
-
 import androidx.compose.ui.Alignment
-// Wordt gebruikt om UI-elementen uit te lijnen (bijv. Center, Start, End).
-
 import androidx.compose.ui.Modifier
-// `Modifier` wordt gebruikt om gedrag en layout toe te voegen aan Composables.
-
+import androidx.compose.ui.draw.dropShadow
+import androidx.compose.ui.draw.innerShadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
-// Bepaalt hoe een afbeelding wordt geschaald binnen zijn container.
-
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-// dp = density-independent pixels → standaard maatvoering voor layout.
+import androidx.compose.ui.graphics.shadow.Shadow
+import androidx.compose.ui.unit.DpOffset
+
 
 import coil.compose.AsyncImage
-// AsyncImage is een Coil-Composable voor het laden van afbeeldingen uit een URL.
 
+import com.example.myapplication0.R
 import com.example.myapplication0.data.Photo
-// Data class die één foto-object beschrijft.
-
 import com.example.myapplication0.viewmodel.MainViewModel
-// De ViewModel die de data en UI-state beheert.
-
 import com.example.myapplication0.viewmodel.PhotoUiState
+
 // De sealed interface die beschrijft in welke toestand de UI zich kan bevinden
 // (Loading, Success, Error).
 
@@ -169,13 +158,13 @@ fun ListScreen(
     // Les 1–3: zichtbaarheid van het antwoord is nu SSOT in de ViewModel
     // (voorheen lokale UI-state die verloren ging bij navigatie)
 
-    // Scaffold is een standaard Material-layout met vaste plekken voor topBar, content en bottomBar.
-    // We plaatsen nu de knoppen (met uitleg) in de topBar en de chatbot in de bottomBar.
+    // Scaffold = enige root (verplicht). Achtergrondkleur via containerColor.
     Scaffold(
+        containerColor = Color(0xFF0E0B0A),
         topBar = {
             // Vaste header met TopAppBar-principe: titel fungeert als "menu" (anchor voor dropdown)
             Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = Color.Transparent,
                 modifier = Modifier.statusBarsPadding()
             ) {
                 // Compacte hoogte voor een appbar-gevoel
@@ -242,7 +231,7 @@ fun ListScreen(
         },
         bottomBar = {
             // Chatbot vast onderin: reply boven de prompt; prompt staat tegen de rand van de bottomBar
-            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+            Surface(color = Color.Transparent) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -280,7 +269,13 @@ fun ListScreen(
                             value = viewModel.chatPrompt,
                             onValueChange = { viewModel.updatePrompt(it) },
                             label = { Text("Vraag aan EzChatbot") },
-                            modifier = Modifier.weight(1f)
+                            modifier = Modifier.weight(1f),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                                disabledContainerColor = MaterialTheme.colorScheme.surface,
+                                errorContainerColor = MaterialTheme.colorScheme.surface
+                            )
                         )
                         Spacer(Modifier.width(8.dp))
                         Button(onClick = { viewModel.sendPrompt("http://10.0.2.2:8080", viewModel.chatPrompt) }) {
@@ -290,14 +285,80 @@ fun ListScreen(
                 }
             }
         }
-    ) { innerPadding ->
-        // CONTENT: uitleg in het midden + fotolijst. Header/footer blijven vast staan.
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+        ) { innerPadding ->
+            // CONTENT-lagen gesplitst: achtergrond zonder padding, voorgrond met innerPadding.
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+            ) {
+                // ACHTERGROND A: ingezoomde + geblurde versie van dezelfde afbeelding — geen innerPadding toepassen
+                Box(
+                    modifier = Modifier
+                        .offset(y = (256).dp)
+                        .matchParentSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    // Achtergrondlaag (alleen de blur/crop-fullscreen image)
+                    Image(
+                        painter = painterResource(R.drawable.magic_lab_bg),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer {
+                                scaleX = 1.6f
+                                scaleY = 1.6f
+                                alpha = 0.6f
+                            }
+                            .blur(72.dp),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                // VOORGROND B: scherpe voorgrondafbeelding container (neumorfisch), als sibling naast de achtergrond
+                Box(
+                    modifier = Modifier
+                        .offset(y = (-56).dp)
+                        .matchParentSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+
+                    val painter = painterResource(id = R.drawable.magic_lab_bg)
+                    val density = LocalDensity.current
+
+                    val intrinsic = painter.intrinsicSize
+                    val widthPx = if (!intrinsic.width.isNaN() && intrinsic.width > 0f) intrinsic.width else 1024f
+                    val heightPx = if (!intrinsic.height.isNaN() && intrinsic.height > 0f) intrinsic.height else 1024f
+
+                    val imageWidthDp = with(density) { widthPx.toDp() }
+                    val imageHeightDp = with(density) { heightPx.toDp() }
+
+                    Box(
+                        modifier = Modifier
+                            .wrapContentSize()
+                    ) {
+                        Image(
+                            painter = painter,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(imageWidthDp, imageHeightDp)
+                                .graphicsLayer {
+                                    scaleX = 1.16f
+                                    scaleY = 1.16f
+                                }
+                                .clip(RoundedCornerShape(24.dp)),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
+
+
+                // VOORGROND: inhoud met innerPadding zodat alleen UI meebeweegt met insets
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
             // Centrale uitlegkaart op basis van geselecteerde knop
             when (selectedInfo) {
                 "counter" -> {
@@ -341,6 +402,7 @@ fun ListScreen(
             }
         }
     }
+}
 }
 
 // COMPONENT: PhotoList
@@ -459,7 +521,7 @@ fun AnswersScreen(
     Scaffold(
         topBar = {
             // Geen experimentele API: eenvoudige Surface als visuele TopBar
-            Surface(color = MaterialTheme.colorScheme.primaryContainer) {
+            Surface(color = Color.Transparent) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -469,7 +531,7 @@ fun AnswersScreen(
         },
         bottomBar = {
             // Geen experimentele API: eenvoudige Surface als visuele BottomBar
-            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+            Surface(color = Color.Transparent) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -550,7 +612,7 @@ fun Lesson1Screen(
         topBar = {
             // Neem de topbar mee (zelfde principe als ListScreen): titel als menu‑anchor + overflow
             Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = Color.Transparent,
                 modifier = Modifier.statusBarsPadding()
             ) {
                 Row(
@@ -608,7 +670,7 @@ fun Lesson1Screen(
         },
         bottomBar = {
             // Dezelfde chatbot‑bottomBar als in ListScreen zodat je kunt blijven chatten
-            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+            Surface(color = Color.Transparent) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -787,7 +849,7 @@ fun Lesson4Screen(
     Scaffold(
         topBar = {
             Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = Color.Transparent,
                 modifier = Modifier.statusBarsPadding()
             ) {
                 Row(
@@ -845,7 +907,7 @@ fun Lesson4Screen(
             }
         },
         bottomBar = {
-            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+            Surface(color = Color.Transparent) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -895,6 +957,7 @@ fun Lesson4Screen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -943,7 +1006,7 @@ fun Lesson2Screen(
     Scaffold(
         topBar = {
             Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = Color.Transparent,
                 modifier = Modifier.statusBarsPadding()
             ) {
                 Row(
@@ -1000,7 +1063,7 @@ fun Lesson2Screen(
             }
         },
         bottomBar = {
-            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+            Surface(color = Color.Transparent) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1049,6 +1112,7 @@ fun Lesson2Screen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -1142,7 +1206,7 @@ fun Lesson3Screen(
     Scaffold(
         topBar = {
             Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = Color.Transparent,
                 modifier = Modifier.statusBarsPadding()
             ) {
                 Row(
@@ -1197,7 +1261,7 @@ fun Lesson3Screen(
             }
         },
         bottomBar = {
-            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+            Surface(color = Color.Transparent) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1246,6 +1310,7 @@ fun Lesson3Screen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
