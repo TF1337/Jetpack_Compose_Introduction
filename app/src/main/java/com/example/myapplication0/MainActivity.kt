@@ -25,6 +25,14 @@ import androidx.activity.enableEdgeToEdge
 
 import com.example.myapplication0.navigation.AppNavigation
 import com.example.myapplication0.ui.theme.MyApplication0Theme
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Offset
+import kotlin.math.hypot
 
 // FASE 1: UI BASIS & ANDROID FUNDAMENTALS
 //
@@ -67,11 +75,30 @@ class MainActivity : ComponentActivity() {
             // Hierdoor is de hele app visueel consistent.
             MyApplication0Theme {
 
-                // ROOT VAN DE COMPOSABLE-BOOM
-                // `AppNavigation` vormt het centrale startpunt van de UI.
-                // Hier wordt bepaald welk scherm zichtbaar is (lijst of detail).
-                // De Activity zelf bevat bewust GEEN schermlogica.
-                AppNavigation()
+                // Global radial gradient background (compose-only)
+                // Colors from your example: #2BE4DC -> #243484 with stops [0f, 0.95f]
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .drawBehind {
+                            val center = Offset(size.width / 2f, size.height / 2f)
+                            // Use diagonal/2 so the gradient comfortably covers the screen
+                            val radius = hypot(size.width, size.height) / 2f
+                            drawRect(
+                                brush = Brush.radialGradient(
+                                    0f to Color(0xFF2BE4DC),
+                                    0.95f to Color(0xFF243484),
+                                    center = center,
+                                    radius = radius
+                                )
+                            )
+                        }
+                ) {
+                    // ROOT VAN DE COMPOSABLE-BOOM
+                    // `AppNavigation` vormt het centrale startpunt van de UI.
+                    // De Activity zelf bevat bewust GEEN schermlogica.
+                    AppNavigation()
+                }
             }
         }
     }

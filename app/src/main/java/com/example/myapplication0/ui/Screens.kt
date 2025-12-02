@@ -4,9 +4,13 @@
 // Alles in deze package bevat uitsluitend schermen en visuele componenten.
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 // `clickable` maakt een UI-element aanklikbaar en koppelt er een actie aan.
 
 import androidx.compose.animation.AnimatedVisibility
@@ -28,6 +32,8 @@ import androidx.compose.foundation.lazy.items
 
 import androidx.compose.material3.*
 // Material 3 UI-componenten zoals Text, Button, ListItem, Scaffold, etc.
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Home
 
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -41,6 +47,9 @@ import androidx.compose.ui.Modifier
 
 import androidx.compose.ui.layout.ContentScale
 // Bepaalt hoe een afbeelding wordt geschaald binnen zijn container.
+
+import androidx.compose.ui.graphics.Color
+// Kleur type voor UI-elementen
 
 import androidx.compose.ui.unit.dp
 // dp = density-independent pixels → standaard maatvoering voor layout.
@@ -101,6 +110,43 @@ fun Lesson1Header(
     }
 }
 
+// COMPONENT: HomeIconButton (Material-conform icoon i.p.v. Unicode)
+// - Toont het officiële Material Rounded Home-icoon (20.dp)
+// - Optioneel een kleine dot-indicator onder het icoon (voor actieve Home)
+// - Blijft binnen les 1–4: puur UI-presentatie, geen logica/navigatie-wijzigingen
+@Composable
+fun HomeIconButton(
+    showActiveDot: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    ElevatedButton(
+        onClick = onClick,
+        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+        modifier = modifier
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Rounded.Home,
+                contentDescription = "Naar Home",
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                modifier = Modifier.size(20.dp)
+            )
+            if (showActiveDot) {
+                Spacer(Modifier.height(2.dp))
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .background(
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
+                            shape = CircleShape
+                        )
+                )
+            }
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NavigationSegmentedButtons(
@@ -108,7 +154,8 @@ fun NavigationSegmentedButtons(
     onNavigate: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val options = listOf("Home", "Les 1", "Les 2", "Les 3", "Les 4")
+    // Home is now represented as a dedicated button in the TopBar (design change)
+    val options = listOf("Les 1", "Les 2", "Les 3", "Les 4")
     SingleChoiceSegmentedButtonRow(
         modifier = modifier
             .horizontalScroll(rememberScrollState())
@@ -172,10 +219,11 @@ fun ListScreen(
     // Scaffold is een standaard Material-layout met vaste plekken voor topBar, content en bottomBar.
     // We plaatsen nu de knoppen (met uitleg) in de topBar en de chatbot in de bottomBar.
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             // Vaste header met TopAppBar-principe: titel fungeert als "menu" (anchor voor dropdown)
             Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = Color.Transparent,
                 modifier = Modifier.statusBarsPadding()
             ) {
                 // Compacte hoogte voor een appbar-gevoel
@@ -187,20 +235,8 @@ fun ListScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // TITEL als navigatie/menuknop (anchor voor DropdownMenu)
-                    NavigationSegmentedButtons(
-                        currentSelection = "Home",
-                        onNavigate = { option ->
-                            when (option) {
-                                "Home" -> { /* Already here */ }
-                                "Les 1" -> onLesson1Click()
-                                "Les 2" -> onLesson2Click()
-                                "Les 3" -> onLesson3Click()
-                                "Les 4" -> onLesson4Click()
-                            }
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
+                    // LEFT: Home knop met Material Rounded Home-icoon (met actieve dot op Home)
+                    HomeIconButton(showActiveDot = true, onClick = { /* al op Home */ })
 
                     // ACTIONS (drie puntjes) — nu ook een DropdownMenu, zoals gevraagd
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -242,7 +278,7 @@ fun ListScreen(
         },
         bottomBar = {
             // Chatbot vast onderin: reply boven de prompt; prompt staat tegen de rand van de bottomBar
-            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+            Surface(color = Color.Transparent) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -298,6 +334,20 @@ fun ListScreen(
                 .padding(innerPadding),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // NAVIGATIE (verplaatst vanuit TopBar - Home Menu)
+            NavigationSegmentedButtons(
+                currentSelection = "",
+                onNavigate = { option ->
+                    when (option) {
+                        "Les 1" -> onLesson1Click()
+                        "Les 2" -> onLesson2Click()
+                        "Les 3" -> onLesson3Click()
+                        "Les 4" -> onLesson4Click()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, top = 16.dp, end = 16.dp)
+            )
+
             // Centrale uitlegkaart op basis van geselecteerde knop
             when (selectedInfo) {
                 "counter" -> {
@@ -457,9 +507,10 @@ fun AnswersScreen(
     // We voegen een TopAppBar en BottomAppBar toe met een zichtbare kleur, puur ter illustratie.
     // De "Terug"-knop blijft bewust in de content, niet in de header/footer.
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             // Geen experimentele API: eenvoudige Surface als visuele TopBar
-            Surface(color = MaterialTheme.colorScheme.primaryContainer) {
+            Surface(color = Color.Transparent) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -469,7 +520,7 @@ fun AnswersScreen(
         },
         bottomBar = {
             // Geen experimentele API: eenvoudige Surface als visuele BottomBar
-            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+            Surface(color = Color.Transparent) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -547,10 +598,11 @@ fun Lesson1Screen(
     // (resetTick verwijderd want prompt is nu SSOT in ViewModel)
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             // Neem de topbar mee (zelfde principe als ListScreen): titel als menu‑anchor + overflow
             Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = Color.Transparent,
                 modifier = Modifier.statusBarsPadding()
             ) {
                 Row(
@@ -561,20 +613,8 @@ fun Lesson1Screen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Titelmenu (alleen visueel/plaatsvervangend hier)
-                    NavigationSegmentedButtons(
-                        currentSelection = "Les 1",
-                        onNavigate = { option ->
-                            when (option) {
-                                "Home" -> onHomeClick()
-                                "Les 1" -> onLesson1Click()
-                                "Les 2" -> onLesson2Click()
-                                "Les 3" -> onLesson3Click()
-                                "Les 4" -> onLesson4Click()
-                            }
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
+                    // Left: Home knop met Material Rounded Home-icoon (zonder dot op Les-scherm)
+                    HomeIconButton(showActiveDot = false, onClick = onHomeClick)
 
                     // Overflow menu met lokale acties (geen navigatie hier, conform minimale wijziging)
                     var overflowOpen by rememberSaveable { mutableStateOf(false) }
@@ -608,7 +648,7 @@ fun Lesson1Screen(
         },
         bottomBar = {
             // Dezelfde chatbot‑bottomBar als in ListScreen zodat je kunt blijven chatten
-            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+            Surface(color = Color.Transparent) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -665,6 +705,20 @@ fun Lesson1Screen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // NAVIGATIE
+            NavigationSegmentedButtons(
+                currentSelection = "Les 1",
+                onNavigate = { option ->
+                    when (option) {
+                        "Les 1" -> { }
+                        "Les 2" -> onLesson2Click()
+                        "Les 3" -> onLesson3Click()
+                        "Les 4" -> onLesson4Click()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+
             // Terugknop (conform pattern)
             Button(onClick = onBack) { Text("Terug") }
 
@@ -785,9 +839,10 @@ fun Lesson4Screen(
     // Lokale state voor chatbot-input (resetTick verwijderd want prompt is nu SSOT in ViewModel)
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = Color.Transparent,
                 modifier = Modifier.statusBarsPadding()
             ) {
                 Row(
@@ -798,20 +853,8 @@ fun Lesson4Screen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Titelmenu
-                    NavigationSegmentedButtons(
-                        currentSelection = "Les 4",
-                        onNavigate = { option ->
-                            when (option) {
-                                "Home" -> onHomeClick()
-                                "Les 1" -> onLesson1Click()
-                                "Les 2" -> onLesson2Click()
-                                "Les 3" -> onLesson3Click()
-                                "Les 4" -> onLesson4Click()
-                            }
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
+                    // Left: Home knop met Material Rounded Home-icoon (zonder dot op Les-scherm)
+                    HomeIconButton(showActiveDot = false, onClick = onHomeClick)
 
                     // Overflow menu
                     var overflowOpen by rememberSaveable { mutableStateOf(false) }
@@ -845,7 +888,7 @@ fun Lesson4Screen(
             }
         },
         bottomBar = {
-            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+            Surface(color = Color.Transparent) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -898,18 +941,50 @@ fun Lesson4Screen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // NAVIGATIE
+            NavigationSegmentedButtons(
+                currentSelection = "Les 4",
+                onNavigate = { option ->
+                    when (option) {
+                        "Les 1" -> onLesson1Click()
+                        "Les 2" -> onLesson2Click()
+                        "Les 3" -> onLesson3Click()
+                        "Les 4" -> { }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+
             Button(onClick = onBack) { Text("Terug") }
 
             Text(text = "Les 4 — Navigatie", style = MaterialTheme.typography.headlineSmall)
 
             // Knop "Geschiedenis"
-            Button(
-                onClick = {
-                    selectedInfo = "history"
-                    // Navigatie gebeurt nu alleen via het overflow menu (Les 4 eis)
+            run {
+                // Aangepaste kleuren conform verzoek: container #232627, tekst #A0A0A5
+                // Met een iets lichtere containerkleur tijdens "pressed" voor visuele feedback
+                val normalContainer = Color(0xFF232627)
+                val pressedContainer = Color(0xFF2B2F30) // iets lichter dan #232627
+                val contentColor = Color(0xFFA0A0A5)
+
+                val interactionSource = remember { MutableInteractionSource() }
+                val isPressed by interactionSource.collectIsPressedAsState()
+
+                Button(
+                    onClick = {
+                        selectedInfo = "history"
+                        // Navigatie gebeurt nu alleen via het overflow menu (Les 4 eis)
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = if (isPressed) pressedContainer else normalContainer,
+                        contentColor = contentColor,
+                        disabledContainerColor = normalContainer.copy(alpha = 0.5f),
+                        disabledContentColor = contentColor.copy(alpha = 0.5f)
+                    ),
+                    interactionSource = interactionSource
+                ) {
+                    Text("Geschiedenis")
                 }
-            ) {
-                Text("Geschiedenis")
             }
 
             // Uitlegkaart
@@ -941,9 +1016,10 @@ fun Lesson2Screen(
     var selectedInfo by rememberSaveable { mutableStateOf<String?>(null) }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = Color.Transparent,
                 modifier = Modifier.statusBarsPadding()
             ) {
                 Row(
@@ -954,20 +1030,8 @@ fun Lesson2Screen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    // Titelmenu
-                    NavigationSegmentedButtons(
-                        currentSelection = "Les 2",
-                        onNavigate = { option ->
-                            when (option) {
-                                "Home" -> onHomeClick()
-                                "Les 1" -> onLesson1Click()
-                                "Les 2" -> { /* Already here */ }
-                                "Les 3" -> onLesson3Click()
-                                "Les 4" -> onLesson4Click()
-                            }
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
+                    // Left: Home knop met Material Rounded Home-icoon (zonder dot op Les-scherm)
+                    HomeIconButton(showActiveDot = false, onClick = onHomeClick)
 
                     // Overflow menu
                     var overflowOpen by rememberSaveable { mutableStateOf(false) }
@@ -1000,7 +1064,7 @@ fun Lesson2Screen(
             }
         },
         bottomBar = {
-            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+            Surface(color = Color.Transparent) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1052,6 +1116,20 @@ fun Lesson2Screen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // NAVIGATIE
+            NavigationSegmentedButtons(
+                currentSelection = "Les 2",
+                onNavigate = { option ->
+                    when (option) {
+                        "Les 1" -> onLesson1Click()
+                        "Les 2" -> { }
+                        "Les 3" -> onLesson3Click()
+                        "Les 4" -> onLesson4Click()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+
             Button(onClick = onBack) { Text("Terug") }
             Text(text = "Les 2 — Layouts", style = MaterialTheme.typography.headlineSmall)
 
@@ -1140,9 +1218,10 @@ fun Lesson3Screen(
     var selectedInfo by rememberSaveable { mutableStateOf<String?>(null) }
 
     Scaffold(
+        containerColor = Color.Transparent,
         topBar = {
             Surface(
-                color = MaterialTheme.colorScheme.primaryContainer,
+                color = Color.Transparent,
                 modifier = Modifier.statusBarsPadding()
             ) {
                 Row(
@@ -1153,19 +1232,8 @@ fun Lesson3Screen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    NavigationSegmentedButtons(
-                        currentSelection = "Les 3",
-                        onNavigate = { option ->
-                            when (option) {
-                                "Home" -> onHomeClick()
-                                "Les 1" -> onLesson1Click()
-                                "Les 2" -> onLesson2Click()
-                                "Les 3" -> { /* Already here */ }
-                                "Les 4" -> onLesson4Click()
-                            }
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
+                    // Left: Home knop met Material Rounded Home-icoon (consistent met andere schermen)
+                    HomeIconButton(showActiveDot = false, onClick = onHomeClick)
 
                     var overflowOpen by rememberSaveable { mutableStateOf(false) }
                     Box {
@@ -1197,7 +1265,7 @@ fun Lesson3Screen(
             }
         },
         bottomBar = {
-            Surface(color = MaterialTheme.colorScheme.secondaryContainer) {
+            Surface(color = Color.Transparent) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -1249,6 +1317,20 @@ fun Lesson3Screen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // NAVIGATIE
+            NavigationSegmentedButtons(
+                currentSelection = "Les 3",
+                onNavigate = { option ->
+                    when (option) {
+                        "Les 1" -> onLesson1Click()
+                        "Les 2" -> onLesson2Click()
+                        "Les 3" -> { }
+                        "Les 4" -> onLesson4Click()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            )
+
             Button(onClick = onBack) { Text("Terug") }
             Text(text = "Les 3 — Lists", style = MaterialTheme.typography.headlineSmall)
 
