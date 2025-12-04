@@ -63,6 +63,12 @@ sealed interface PhotoUiState {
     data class Error(val message: String) : PhotoUiState
 }
 
+// Presence visual state for the Home screen (SSOT, UI-only meaning)
+// Placed below PhotoUiState and above MainViewModel as requested
+enum class PresenceState {
+    Idle // represents the constant ambient life state of the Home screen
+}
+
 // VIEWMODEL KLASSE
 // Deze klasse bevat de toestand (state) en logica van de app.
 class MainViewModel : ViewModel() {
@@ -110,6 +116,10 @@ class MainViewModel : ViewModel() {
             uiState = PhotoUiState.Success(emptyList())
         }
     }
+
+    // ViewModel-owned presence state (read-only to UI)
+    var presenceState: PresenceState by mutableStateOf(PresenceState.Idle)
+        private set
 
     // -------------------------------------------------------------
     // CHAT: SIMPELE STATE + ACTIE (MINIMALE INTEGRATIE)

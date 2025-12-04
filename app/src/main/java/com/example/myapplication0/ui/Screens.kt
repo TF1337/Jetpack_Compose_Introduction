@@ -134,6 +134,8 @@ fun ListScreen(
     // `uiState` is een Compose-observable waarde in de ViewModel.
     // Bij elke wijziging wordt dit scherm automatisch opnieuw opgebouwd.
     val state = viewModel.uiState
+    // Presence (SSOT in ViewModel) — alleen ListScreen leest dit.
+    val presence = viewModel.presenceState
 
     // LOCAL UI STATE
     // `rememberSaveable` zorgt ervoor dat de waarde ook na rotatie blijft bestaan (Les 1).
@@ -291,29 +293,6 @@ fun ListScreen(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
-                // ACHTERGROND A: ingezoomde + geblurde versie van dezelfde afbeelding — geen innerPadding toepassen
-                Box(
-                    modifier = Modifier
-                        .offset(y = (256).dp)
-                        .matchParentSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // Achtergrondlaag (alleen de blur/crop-fullscreen image)
-                    Image(
-                        painter = painterResource(R.drawable.magic_lab_bg),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer {
-                                scaleX = 1.6f
-                                scaleY = 1.6f
-                                alpha = 0.6f
-                            }
-                            .blur(72.dp),
-                        contentScale = ContentScale.Crop
-                    )
-                }
-
                 // VOORGROND B: scherpe voorgrondafbeelding container (neumorfisch), als sibling naast de achtergrond
                 Box(
                     modifier = Modifier
@@ -349,6 +328,48 @@ fun ListScreen(
                             contentScale = ContentScale.Crop
                         )
                     }
+                }
+                
+
+                // AMBIENT PRESENCE OVERLAY (Idle)
+                // Plaatsing: boven beide images, onder de UI‑Column
+                if (presence == com.example.myapplication0.viewmodel.PresenceState.Idle) {
+                    val idleAlpha by rememberInfiniteTransition(label = "idlePresence")
+                        .animateFloat(
+                            initialValue = 0.10f,
+                            targetValue = 0.55f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(4000, easing = LinearEasing),
+                                repeatMode = RepeatMode.Reverse
+                            ),
+                            label = "idlePresenceAlpha"
+                        )
+
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .graphicsLayer { alpha = idleAlpha }
+                            .background(
+                                Brush.radialGradient(
+                                    colors = listOf(Color(0xFFFFB35C), Color.Transparent),
+                                    center = Offset(350f, 620f),
+                                    radius = 120f
+                                )
+                            )
+
+                    )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .graphicsLayer { alpha = idleAlpha } // slightly weaker = more natural
+                            .background(
+                                Brush.radialGradient(
+                                    colors = listOf(Color(0xFFFFB35C), Color.Transparent),
+                                    center = Offset(850f, 625f),  // <-- change only this
+                                    radius = 120f
+                                )
+                            )
+                    )
                 }
 
 
