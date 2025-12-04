@@ -1,5 +1,6 @@
 ﻿package com.example.myapplication0.ui
 
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -296,7 +297,7 @@ fun ListScreen(
                 // VOORGROND B: scherpe voorgrondafbeelding container (neumorfisch), als sibling naast de achtergrond
                 Box(
                     modifier = Modifier
-                        .offset(y = (-56).dp)
+                        .offset(y = (-42).dp)
                         .matchParentSize(),
                     contentAlignment = Alignment.Center
                 ) {
@@ -304,12 +305,9 @@ fun ListScreen(
                     val painter = painterResource(id = R.drawable.magic_lab_bg)
                     val density = LocalDensity.current
 
-                    val intrinsic = painter.intrinsicSize
-                    val widthPx = if (!intrinsic.width.isNaN() && intrinsic.width > 0f) intrinsic.width else 1024f
-                    val heightPx = if (!intrinsic.height.isNaN() && intrinsic.height > 0f) intrinsic.height else 1024f
-
-                    val imageWidthDp = with(density) { widthPx.toDp() }
-                    val imageHeightDp = with(density) { heightPx.toDp() }
+                    val configuration = LocalConfiguration.current
+                    val imageWidthDp = configuration.screenWidthDp.dp          // zo breed als het scherm
+                    val imageHeightDp = (configuration.screenWidthDp * 4f / 3f).dp  // ongeveer 3:4 verhouding (hoger dan breed)
 
                     Box(
                         modifier = Modifier
@@ -321,8 +319,8 @@ fun ListScreen(
                             modifier = Modifier
                                 .size(imageWidthDp, imageHeightDp)
                                 .graphicsLayer {
-                                    scaleX = 1.16f
-                                    scaleY = 1.16f
+                                    scaleX = 1.00f
+                                    scaleY = 1.00f
                                 }
                                 .clip(RoundedCornerShape(24.dp)),
                             contentScale = ContentScale.Crop
@@ -333,45 +331,282 @@ fun ListScreen(
 
                 // AMBIENT PRESENCE OVERLAY (Idle)
                 // Plaatsing: boven beide images, onder de UI‑Column
+                // LANTERN IDLE FIRE PULSE (organic, non-linear)
+                val idleAlpha by rememberInfiniteTransition(label = "idleLantern")
+                    .animateFloat(
+                        initialValue = 0.32f,
+                        targetValue = 0.52f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(
+                                durationMillis = 6600,
+                                easing = FastOutSlowInEasing   // ✅ fire-like breathing
+                            ),
+                            repeatMode = RepeatMode.Reverse
+                        ),
+                        label = "idleLanternAlpha"
+                    )
+
+
+                // === LANTERN LIGHT CONE (UPGRADED) ===
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .graphicsLayer { alpha = idleAlpha }
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    Color(0xFFFFD8A8), // warm lantern core
+                                    Color(0x88FFB35C), // soft glow falloff
+                                    Color.Transparent
+                                ),
+                                center = Offset(310f, 580f), // ceiling-origin feel
+                                radius = 90f               // cone spread instead of hotspot
+                            )
+                        )
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .graphicsLayer { alpha = idleAlpha }
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    Color(0xFFFFD8A8), // warm lantern core
+                                    Color(0x88FFB35C), // soft glow falloff
+                                    Color.Transparent
+                                ),
+                                center = Offset(910f, 580f), // ceiling-origin feel
+                                radius = 90f               // cone spread instead of hotspot
+                            )
+                        )
+                )
                 if (presence == com.example.myapplication0.viewmodel.PresenceState.Idle) {
-                    val idleAlpha by rememberInfiniteTransition(label = "idlePresence")
+
+                    val candleBase by rememberInfiniteTransition(label = "candleBase")
                         .animateFloat(
-                            initialValue = 0.10f,
+                            initialValue = 0.15f,
                             targetValue = 0.55f,
                             animationSpec = infiniteRepeatable(
-                                animation = tween(4000, easing = LinearEasing),
-                                repeatMode = RepeatMode.Reverse
+                                animation = keyframes {
+                                    durationMillis = 2200
+                                    0.24f at 0
+                                    0.48f at 300     // 🔥 fast flare
+                                    0.72f at 600
+                                    0.48f at 900       // slow decay
+                                    0.24f at 1200    // secondary rise
+                                    0.48f at 1500
+                                    0.72f at 1800
+                                    0.48f at 2200
+                                },
+                                repeatMode = RepeatMode.Restart
                             ),
-                            label = "idlePresenceAlpha"
+                            label = "candleBase"
                         )
 
+                    // ✅ Micro chaotic shimmer (tiny high-frequency noise)
+                    val candleShimmer by rememberInfiniteTransition(label = "candleShimmer")
+                        .animateFloat(
+                            initialValue = 0.98f,
+                            targetValue = 1.12f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(
+                                    durationMillis = 600,
+                                    easing = LinearEasing
+                                ),
+                                repeatMode = RepeatMode.Restart
+                            ),
+                            label = "candleShimmer"
+                        )
+
+                    // ✅ Vertical heat convection
+                    val candleDrift by rememberInfiniteTransition(label = "candleDrift")
+                        .animateFloat(
+                            initialValue = 0f,
+                            targetValue = -4.5f,
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(
+                                    durationMillis = 120,
+                                    easing = LinearOutSlowInEasing
+                                ),
+                                repeatMode = RepeatMode.Reverse
+                            ),
+                            label = "candleDrift"
+                        )
+
+                    val finalAlpha = candleBase * candleShimmer
+
+                    // ===============================
+                    // 🔥 VIAL 1 — CANDLE FLAME
+                    // ===============================
                     Box(
                         modifier = Modifier
-                            .matchParentSize()
-                            .graphicsLayer { alpha = idleAlpha }
+                            .offset(x = 45.dp, y = 550.dp)
+                            .graphicsLayer {
+                                alpha = finalAlpha * 0.85f
+                                translationY = candleDrift
+                                scaleX =  0.16f   // uneven shape
+                                scaleY =  0.46f
+                            }
+                            .size(width = 22.dp, height = 34.dp)
+                            .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
                             .background(
-                                Brush.radialGradient(
-                                    colors = listOf(Color(0xFFFFB35C), Color.Transparent),
-                                    center = Offset(350f, 620f),
-                                    radius = 120f
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color(0xFFFFF1A8),  // white hot core
+                                        Color(0xFFFFB35C),  // flame yellow
+                                        Color(0xFFFF6A00),  // deep orange
+                                        Color.Transparent
+                                    )
                                 )
+                            )
+                    )
+
+                    // ===============================
+                    // 🔥 VIAL 2 — CANDLE FLAME
+                    // ===============================
+                    Box(
+                        modifier = Modifier
+                            .offset(x = 350.dp, y = 535.dp)
+                            .graphicsLayer {
+                                alpha = finalAlpha * 0.85f   // variation per candle
+                                translationY = candleDrift * 0.85f
+                                scaleX = 0.16f
+                                scaleY = 0.66f
+                            }
+                            .size(width = 26.dp, height = 30.dp)
+                            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color(0xFFFFF1A8),
+                                        Color(0xFFFFB35C),
+                                        Color(0xFFFF6A00),
+                                        Color.Transparent
+                                    )
+                                )
+                            )
+                    )
+                    // ===============================
+                    // 🔥 VIAL 3 — CANDLE FLAME
+                    // ===============================
+                    Box(
+                        modifier = Modifier
+                            .offset(x = 19.dp, y = 549.dp)
+                            .graphicsLayer {
+                                alpha = finalAlpha * 0.55f
+                                translationY = candleDrift
+                                scaleX =  0.16f   // uneven shape
+                                scaleY =  0.46f
+                            }
+                            .size(width = 22.dp, height = 14.dp)
+                            .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color(0xFFFFF1A8),  // white hot core
+                                        Color(0xFFFFB35C),  // flame yellow
+                                        Color(0xFFFF6A00),  // deep orange
+                                        Color.Transparent
+                                    )
+                                )
+                            )
+                    )
+                    // IDLE VIAL LIQUID GLOW (contained, no radial spill)
+                    if (presence == com.example.myapplication0.viewmodel.PresenceState.Idle) {
+
+                        val vialPulse by rememberInfiniteTransition(label = "vialPulse")
+                            .animateFloat(
+                                initialValue = 0.25f,
+                                targetValue = 0.82f,
+                                animationSpec = infiniteRepeatable(
+                                    animation = tween(
+                                        durationMillis = 3200,
+                                        easing = FastOutSlowInEasing   // ✅ organic liquid feel
+                                    ),
+                                    repeatMode = RepeatMode.Reverse
+                                ),
+                                label = "vialPulseAlpha"
                             )
 
-                    )
-                    Box(
-                        modifier = Modifier
-                            .matchParentSize()
-                            .graphicsLayer { alpha = idleAlpha } // slightly weaker = more natural
-                            .background(
-                                Brush.radialGradient(
-                                    colors = listOf(Color(0xFFFFB35C), Color.Transparent),
-                                    center = Offset(850f, 625f),  // <-- change only this
-                                    radius = 120f
+                        // === VIAL 1 ===
+                        Box(
+                            modifier = Modifier
+                                .offset(x = 35.dp, y = 545.dp)
+                                .size(width = 40.dp, height = 65.dp)
+                                .graphicsLayer {
+                                    alpha = vialPulse * 0.30f
+                                }
+                                .clip(RoundedCornerShape(32.dp))
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color(0x99FFD27D),   // bright liquid core
+                                            Color(0xCCFF6A00),   // hot orange middle
+                                            Color(0x88B11212),   // deep red bottom
+                                            Color.Transparent
+                                        )
+                                    )
                                 )
-                            )
-                    )
+                        )
+
+                        // === VIAL 2 ===
+                        Box(
+                            modifier = Modifier
+                                .offset(x = 327.dp, y = 507.dp)
+                                .size(width = 66.dp, height = 60.dp)
+                                .graphicsLayer { alpha = vialPulse * 0.30f }
+                                .clip(RoundedCornerShape(32.dp))
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color(0x99FFD27D),
+                                            Color(0xCCFF6A00),
+                                            Color(0x88B11212),
+                                            Color.Transparent
+                                        )
+                                    )
+                                )
+                        )
+                        // === VIAL 3 ===
+                        Box(
+                            modifier = Modifier
+                                .offset(x = 22.dp, y = 544.dp)
+                                .size(width = 18.dp, height = 12.dp)
+                                .graphicsLayer {
+                                    alpha = vialPulse * 0.55f
+                                }
+                                .clip(RoundedCornerShape(24.dp))
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color(0x99FFD27D),   // bright liquid core
+                                            Color(0xCCFF6A00),   // hot orange middle
+                                            Color(0x88B11212),   // deep red bottom
+                                            Color.Transparent
+                                        )
+                                    )
+                                )
+                        )
+                        // === VIAL 4 ===
+                        Box(
+                            modifier = Modifier
+                                .offset(x = -48.dp, y = 507.dp)
+                                .size(width = 66.dp, height = 60.dp)
+                                .graphicsLayer { alpha = vialPulse * 0.55f }
+                                .clip(RoundedCornerShape(32.dp))
+                                .background(
+                                    Brush.verticalGradient(
+                                        colors = listOf(
+                                            Color(0x99FFD27D),
+                                            Color(0xCCFF6A00),
+                                            Color(0x88B11212),
+                                            Color.Transparent
+                                        )
+                                    )
+                                )
+                        )
+                    }
                 }
-
 
                 // VOORGROND: inhoud met innerPadding zodat alleen UI meebeweegt met insets
                 Column(
