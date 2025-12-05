@@ -325,20 +325,65 @@ fun ListScreen(
                                 .clip(RoundedCornerShape(24.dp)),
                             contentScale = ContentScale.Crop
                         )
+
+                        // === NEW CHARACTER LAYER (Animated) ===
+                        val infiniteTransition = rememberInfiniteTransition(label = "characterAnimation")
+
+                        // 1. Breathing Animation (Scale)
+                        val breathScale by infiniteTransition.animateFloat(
+                            initialValue = 1.00f,
+                            targetValue = 1.02f, // Subtle breathing
+                            animationSpec = infiniteRepeatable(
+                                animation = tween(600, easing = FastOutSlowInEasing),
+                                repeatMode = RepeatMode.Reverse
+                            ),
+                            label = "breathing"
+                        )
+
+                        // 2. Twitching Animation (Rotation)
+                        val twitchRotation by infiniteTransition.animateFloat(
+                            initialValue = 0f,
+                            targetValue = 0f,
+                            animationSpec = infiniteRepeatable(
+                                animation = keyframes {
+                                    durationMillis = 5000
+                                    0f at 0
+                                    0f at 4000      // Still for 4s
+                                    0f at 4100      // Twitch right
+                                    0f at 4200     // Twitch left
+                                    0f at 4300      // Center
+                                },
+                                repeatMode = RepeatMode.Restart
+                            ),
+                            label = "twitching"
+                        )
+
+                        // The Character Cutout (drawn ON TOP of the background)
+                        Image(
+                            painter = painterResource(id = R.drawable.magic_lab_bgcc),
+                            contentDescription = "Animated Character",
+                            modifier = Modifier
+                                .size(imageWidthDp, imageHeightDp) // Matches background size exactly
+                                .graphicsLayer {
+                                    scaleX = breathScale
+                                    scaleY = breathScale
+                                    rotationZ = twitchRotation
+                                }
+                                .clip(RoundedCornerShape(24.dp)), // Matches background shape
+                            contentScale = ContentScale.Crop
+                        )
                     }
                 }
-                
-
                 // AMBIENT PRESENCE OVERLAY (Idle)
                 // Plaatsing: boven beide images, onder de UI‑Column
                 // LANTERN IDLE FIRE PULSE (organic, non-linear)
                 val idleAlpha by rememberInfiniteTransition(label = "idleLantern")
                     .animateFloat(
-                        initialValue = 0.32f,
+                        initialValue = 0.12f,
                         targetValue = 0.52f,
                         animationSpec = infiniteRepeatable(
                             animation = tween(
-                                durationMillis = 6600,
+                                durationMillis = 11600,
                                 easing = FastOutSlowInEasing   // ✅ fire-like breathing
                             ),
                             repeatMode = RepeatMode.Reverse
@@ -360,7 +405,7 @@ fun ListScreen(
                                     Color.Transparent
                                 ),
                                 center = Offset(310f, 580f), // ceiling-origin feel
-                                radius = 90f               // cone spread instead of hotspot
+                                radius = 80f               // cone spread instead of hotspot
                             )
                         )
                 )
@@ -376,7 +421,39 @@ fun ListScreen(
                                     Color.Transparent
                                 ),
                                 center = Offset(910f, 580f), // ceiling-origin feel
-                                radius = 90f               // cone spread instead of hotspot
+                                radius = 80f               // cone spread instead of hotspot
+                            )
+                        )
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .graphicsLayer { alpha = idleAlpha * 0.35f }
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    Color(0xFFFF2A00), // warm lantern core
+                                    Color(0xFFFF2A00), // soft glow falloff
+                                    Color.Transparent
+                                ),
+                                center = Offset(-60f, 850f), // ceiling-origin feel
+                                radius = 310f               // cone spread instead of hotspot
+                            )
+                        )
+                )
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .graphicsLayer { alpha = idleAlpha * 0.35f }
+                        .background(
+                            Brush.radialGradient(
+                                colors = listOf(
+                                    Color(0xFFFF2A00), // warm lantern core
+                                    Color(0xFFFF2A00), // soft glow falloff
+                                    Color.Transparent
+                                ),
+                                center = Offset(1275f, 950f), // ceiling-origin feel
+                                radius = 440f               // cone spread instead of hotspot
                             )
                         )
                 )
@@ -445,7 +522,7 @@ fun ListScreen(
                                 alpha = finalAlpha * 0.85f
                                 translationY = candleDrift
                                 scaleX =  0.16f   // uneven shape
-                                scaleY =  0.46f
+                                scaleY =  0.56f
                             }
                             .size(width = 22.dp, height = 34.dp)
                             .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
@@ -471,7 +548,7 @@ fun ListScreen(
                                 alpha = finalAlpha * 0.85f   // variation per candle
                                 translationY = candleDrift * 0.85f
                                 scaleX = 0.16f
-                                scaleY = 0.66f
+                                scaleY = 0.96f
                             }
                             .size(width = 26.dp, height = 30.dp)
                             .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
@@ -517,7 +594,7 @@ fun ListScreen(
                         val vialPulse by rememberInfiniteTransition(label = "vialPulse")
                             .animateFloat(
                                 initialValue = 0.25f,
-                                targetValue = 0.82f,
+                                targetValue = 1.32f,
                                 animationSpec = infiniteRepeatable(
                                     animation = tween(
                                         durationMillis = 3200,
