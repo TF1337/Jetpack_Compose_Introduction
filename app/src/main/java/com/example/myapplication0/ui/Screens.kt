@@ -329,12 +329,12 @@ fun ListScreen(
                         // === NEW CHARACTER LAYER (Animated) ===
                         val infiniteTransition = rememberInfiniteTransition(label = "characterAnimation")
 
-                        // 1. Breathing Animation (Scale)
+                        // 1. Breathing Animation (Scale) MAKE THE BOOK FLIP WITH VIDEO OVERLAY!!!! KEYFRAMES!@!@!@!!@
                         val breathScale by infiniteTransition.animateFloat(
                             initialValue = 1.00f,
-                            targetValue = 1.02f, // Subtle breathing
+                            targetValue = 1.06f, // Subtle breathing
                             animationSpec = infiniteRepeatable(
-                                animation = tween(600, easing = FastOutSlowInEasing),
+                                animation = tween(6600, easing = FastOutSlowInEasing),
                                 repeatMode = RepeatMode.Reverse
                             ),
                             label = "breathing"
@@ -380,10 +380,10 @@ fun ListScreen(
                 val idleAlpha by rememberInfiniteTransition(label = "idleLantern")
                     .animateFloat(
                         initialValue = 0.12f,
-                        targetValue = 0.52f,
+                        targetValue = 0.72f,
                         animationSpec = infiniteRepeatable(
                             animation = tween(
-                                durationMillis = 11600,
+                                durationMillis = 6600,
                                 easing = FastOutSlowInEasing   // ✅ fire-like breathing
                             ),
                             repeatMode = RepeatMode.Reverse
@@ -405,7 +405,7 @@ fun ListScreen(
                                     Color.Transparent
                                 ),
                                 center = Offset(310f, 580f), // ceiling-origin feel
-                                radius = 80f               // cone spread instead of hotspot
+                                radius = 120f               // cone spread instead of hotspot
                             )
                         )
                 )
@@ -421,7 +421,7 @@ fun ListScreen(
                                     Color.Transparent
                                 ),
                                 center = Offset(910f, 580f), // ceiling-origin feel
-                                radius = 80f               // cone spread instead of hotspot
+                                radius = 120f               // cone spread instead of hotspot
                             )
                         )
                 )
