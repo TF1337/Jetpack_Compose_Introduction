@@ -327,52 +327,52 @@ fun ListScreen(
                             contentScale = ContentScale.Crop
                         )
 
-                        // === NEW CHARACTER LAYER (Animated) ===
-                        val infiniteTransition = rememberInfiniteTransition(label = "characterAnimation")
-
-                        // 1. Breathing Animation (Scale) MAKE THE BOOK FLIP WITH VIDEO OVERLAY!!!! KEYFRAMES!@!@!@!!@
-                        val breathScale by infiniteTransition.animateFloat(
-                            initialValue = 1.00f,
-                            targetValue = 1.06f, // Subtle breathing
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(6600, easing = FastOutSlowInEasing),
-                                repeatMode = RepeatMode.Reverse
-                            ),
-                            label = "breathing"
-                        )
-
-                        // 2. Twitching Animation (Rotation)
-                        val twitchRotation by infiniteTransition.animateFloat(
-                            initialValue = 0f,
-                            targetValue = 0f,
-                            animationSpec = infiniteRepeatable(
-                                animation = keyframes {
-                                    durationMillis = 5000
-                                    0f at 0
-                                    0f at 4000      // Still for 4s
-                                    0f at 4100      // Twitch right
-                                    0f at 4200     // Twitch left
-                                    0f at 4300      // Center
-                                },
-                                repeatMode = RepeatMode.Restart
-                            ),
-                            label = "twitching"
-                        )
-
-                        // The Character Cutout (drawn ON TOP of the background)
-                        Image(
-                            painter = painterResource(id = R.drawable.magic_lab_bgcc),
-                            contentDescription = "Animated Character",
-                            modifier = Modifier
-                                .size(imageWidthDp, imageHeightDp) // Matches background size exactly
-                                .graphicsLayer {
-                                    scaleX = breathScale
-                                    scaleY = breathScale
-                                    rotationZ = twitchRotation
-                                }
-                                .clip(RoundedCornerShape(parentMaxWidth * 0.04f)), // Matches background shape
-                            contentScale = ContentScale.Crop
-                        )
+//                        // === NEW CHARACTER LAYER (Animated) ===
+//                        val infiniteTransition = rememberInfiniteTransition(label = "characterAnimation")
+//
+//                        // 1. Breathing Animation (Scale) MAKE THE BOOK FLIP WITH VIDEO OVERLAY!!!! KEYFRAMES!@!@!@!!@
+//                        val breathScale by infiniteTransition.animateFloat(
+//                            initialValue = 1.00f,
+//                            targetValue = 1.06f, // Subtle breathing
+//                            animationSpec = infiniteRepeatable(
+//                                animation = tween(6600, easing = FastOutSlowInEasing),
+//                                repeatMode = RepeatMode.Reverse
+//                            ),
+//                            label = "breathing"
+//                        )
+//
+//                        // 2. Twitching Animation (Rotation)
+//                        val twitchRotation by infiniteTransition.animateFloat(
+//                            initialValue = 0f,
+//                            targetValue = 0f,
+//                            animationSpec = infiniteRepeatable(
+//                                animation = keyframes {
+//                                    durationMillis = 5000
+//                                    0f at 0
+//                                    0f at 4000      // Still for 4s
+//                                    0f at 4100      // Twitch right
+//                                    0f at 4200     // Twitch left
+//                                    0f at 4300      // Center
+//                                },
+//                                repeatMode = RepeatMode.Restart
+//                            ),
+//                            label = "twitching"
+//                        )
+//
+//                        // The Character Cutout (drawn ON TOP of the background)
+//                        Image(
+//                            painter = painterResource(id = R.drawable.magic_lab_bgcc),
+//                            contentDescription = "Animated Character",
+//                            modifier = Modifier
+//                                .size(imageWidthDp, imageHeightDp) // Matches background size exactly
+//                                .graphicsLayer {
+//                                    scaleX = breathScale
+//                                    scaleY = breathScale
+//                                    rotationZ = twitchRotation
+//                                }
+//                                .clip(RoundedCornerShape(parentMaxWidth * 0.04f)), // Matches background shape
+//                            contentScale = ContentScale.Crop
+//                        )
                     }
                 }
                 // AMBIENT PRESENCE OVERLAY (Idle)
@@ -405,7 +405,7 @@ fun ListScreen(
                                     Color(0x88FFB35C), // soft glow falloff
                                     Color.Transparent
                                 ),
-                                center = Offset(constraints.maxWidth.toFloat() * 0.752f, constraints.maxHeight.toFloat() * 0.634f), // ceiling-origin feel
+                                center = Offset(constraints.maxWidth.toFloat() * 0.834f, constraints.maxHeight.toFloat() * 0.242f), // ceiling-origin feel
                                 radius = constraints.maxWidth.toFloat() * 0.15f
                             )
                         )
@@ -421,7 +421,7 @@ fun ListScreen(
                                     Color(0x88FFB35C), // soft glow falloff
                                     Color.Transparent
                                 ),
-                                center = Offset(constraints.maxWidth.toFloat() * 0.9f, constraints.maxHeight.toFloat() * 0.634f), // Clamp to bounds
+                                center = Offset(constraints.maxWidth.toFloat() * 0.284f, constraints.maxHeight.toFloat() * 0.242f), // Clamp to bounds
                                 radius = constraints.maxWidth.toFloat() * 0.15f
                             )
                         )
@@ -437,7 +437,7 @@ fun ListScreen(
                                     Color(0xFFFF2A00), // soft glow falloff
                                     Color.Transparent
                                 ),
-                                center = Offset(constraints.maxWidth.toFloat() * -0.04f, constraints.maxHeight.toFloat() * 0.75f), // ceiling-origin feel
+                                center = Offset(constraints.maxWidth.toFloat() * -0.04f, constraints.maxHeight.toFloat() * 0.35f), // ceiling-origin feel
                                 radius = constraints.maxWidth.toFloat() * 0.32f               // cone spread instead of hotspot
                             )
                         )
@@ -453,7 +453,7 @@ fun ListScreen(
                                     Color(0xFFFF2A00), // soft glow falloff
                                     Color.Transparent
                                 ),
-                                center = Offset(constraints.maxWidth.toFloat() * 1.02f, constraints.maxHeight.toFloat() * 0.84f), // ceiling-origin feel
+                                center = Offset(constraints.maxWidth.toFloat() * 1.02f, constraints.maxHeight.toFloat() * 0.44f), // ceiling-origin feel
                                 radius = constraints.maxWidth.toFloat() * 0.45f               // cone spread instead of hotspot
                             )
                         )
@@ -565,11 +565,11 @@ fun ListScreen(
                             )
                     )
                     // ===============================
-                    // 🔥 VIAL 3 — CANDLE FLAME
+                    // 🔥 VIAL 3 — CANDLE FLAME # small candle left
                     // ===============================
                     Box(
                         modifier = Modifier
-                            .offset(x = maxWidth * 0.046f, y = maxHeight * 0.60f)
+                            .offset(x = maxWidth * 0.054f, y = maxHeight * 0.60f)
                             .graphicsLayer {
                                 alpha = finalAlpha * 0.55f
                                 translationY = candleDrift
@@ -595,7 +595,7 @@ fun ListScreen(
                         val vialPulse by rememberInfiniteTransition(label = "vialPulse")
                             .animateFloat(
                                 initialValue = 0.25f,
-                                targetValue = 1.32f,
+                                targetValue = 1.02f,
                                 animationSpec = infiniteRepeatable(
                                     animation = tween(
                                         durationMillis = 3200,
@@ -609,7 +609,7 @@ fun ListScreen(
                         // === VIAL 1 ===
                         Box(
                             modifier = Modifier
-                                .offset(x = maxWidth * 0.085f, y = maxHeight * 0.595f)
+                                .offset(x = maxWidth * 0.085f, y = maxHeight * 0.592f)
                                 .size(width = 40.dp, height = 65.dp)
                                 .graphicsLayer {
                                     alpha = vialPulse * 0.30f
@@ -648,12 +648,12 @@ fun ListScreen(
                         // === VIAL 3 ===
                         Box(
                             modifier = Modifier
-                                .offset(x = maxWidth * 0.053f, y = maxHeight * 0.594f)
-                                .size(width = 18.dp, height = 12.dp)
+                                .offset(x = maxWidth * 0.048f, y = maxHeight * 0.590f)
+                                .size(width = 24.dp, height = 12.dp)
                                 .graphicsLayer {
                                     alpha = vialPulse * 0.55f
                                 }
-                                .clip(RoundedCornerShape(24.dp))
+                                .clip(RoundedCornerShape(32.dp))
                                 .background(
                                     Brush.verticalGradient(
                                         colors = listOf(
@@ -668,7 +668,7 @@ fun ListScreen(
                         // === VIAL 4 ===
                         Box(
                             modifier = Modifier
-                                .offset(x = maxWidth * 0.015f, y = maxHeight * 0.554f)
+                                .offset(x = maxWidth * -0.116f, y = maxHeight * 0.552f)
                                 .size(width = 66.dp, height = 60.dp)
                                 .graphicsLayer { alpha = vialPulse * 0.55f }
                                 .clip(RoundedCornerShape(32.dp))
