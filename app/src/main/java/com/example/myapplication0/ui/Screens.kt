@@ -290,14 +290,15 @@ fun ListScreen(
         }
         ) { innerPadding ->
             // CONTENT-lagen gesplitst: achtergrond zonder padding, voorgrond met innerPadding.
-            Box(
+            BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
             ) {
+                val parentMaxWidth = maxWidth
                 // VOORGROND B: scherpe voorgrondafbeelding container (neumorfisch), als sibling naast de achtergrond
                 Box(
                     modifier = Modifier
-                        .offset(y = (-42).dp)
+                        .offset(y = -maxHeight * 0.05f)
                         .matchParentSize(),
                     contentAlignment = Alignment.Center
                 ) {
@@ -322,7 +323,7 @@ fun ListScreen(
                                     scaleX = 1.00f
                                     scaleY = 1.00f
                                 }
-                                .clip(RoundedCornerShape(24.dp)),
+                                .clip(RoundedCornerShape(parentMaxWidth * 0.04f)),
                             contentScale = ContentScale.Crop
                         )
 
@@ -369,7 +370,7 @@ fun ListScreen(
                                     scaleY = breathScale
                                     rotationZ = twitchRotation
                                 }
-                                .clip(RoundedCornerShape(24.dp)), // Matches background shape
+                                .clip(RoundedCornerShape(parentMaxWidth * 0.04f)), // Matches background shape
                             contentScale = ContentScale.Crop
                         )
                     }
@@ -404,8 +405,8 @@ fun ListScreen(
                                     Color(0x88FFB35C), // soft glow falloff
                                     Color.Transparent
                                 ),
-                                center = Offset(310f, 580f), // ceiling-origin feel
-                                radius = 120f               // cone spread instead of hotspot
+                                center = Offset(constraints.maxWidth.toFloat() * 0.752f, constraints.maxHeight.toFloat() * 0.634f), // ceiling-origin feel
+                                radius = constraints.maxWidth.toFloat() * 0.15f
                             )
                         )
                 )
@@ -420,8 +421,8 @@ fun ListScreen(
                                     Color(0x88FFB35C), // soft glow falloff
                                     Color.Transparent
                                 ),
-                                center = Offset(910f, 580f), // ceiling-origin feel
-                                radius = 120f               // cone spread instead of hotspot
+                                center = Offset(constraints.maxWidth.toFloat() * 0.9f, constraints.maxHeight.toFloat() * 0.634f), // Clamp to bounds
+                                radius = constraints.maxWidth.toFloat() * 0.15f
                             )
                         )
                 )
@@ -436,8 +437,8 @@ fun ListScreen(
                                     Color(0xFFFF2A00), // soft glow falloff
                                     Color.Transparent
                                 ),
-                                center = Offset(-60f, 850f), // ceiling-origin feel
-                                radius = 310f               // cone spread instead of hotspot
+                                center = Offset(constraints.maxWidth.toFloat() * -0.04f, constraints.maxHeight.toFloat() * 0.75f), // ceiling-origin feel
+                                radius = constraints.maxWidth.toFloat() * 0.32f               // cone spread instead of hotspot
                             )
                         )
                 )
@@ -452,8 +453,8 @@ fun ListScreen(
                                     Color(0xFFFF2A00), // soft glow falloff
                                     Color.Transparent
                                 ),
-                                center = Offset(1275f, 950f), // ceiling-origin feel
-                                radius = 440f               // cone spread instead of hotspot
+                                center = Offset(constraints.maxWidth.toFloat() * 1.02f, constraints.maxHeight.toFloat() * 0.84f), // ceiling-origin feel
+                                radius = constraints.maxWidth.toFloat() * 0.45f               // cone spread instead of hotspot
                             )
                         )
                 )
@@ -517,15 +518,15 @@ fun ListScreen(
                     // ===============================
                     Box(
                         modifier = Modifier
-                            .offset(x = 45.dp, y = 550.dp)
+                            .offset(x = maxWidth * 0.109f, y = maxHeight * 0.601f)
                             .graphicsLayer {
                                 alpha = finalAlpha * 0.85f
                                 translationY = candleDrift
                                 scaleX =  0.16f   // uneven shape
                                 scaleY =  0.56f
                             }
-                            .size(width = 22.dp, height = 34.dp)
-                            .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
+                            .size(width = maxWidth * 0.053f, height = maxHeight * 0.037f)
+                            .clip(RoundedCornerShape(topStart = maxWidth * 0.034f, topEnd = maxWidth * 0.034f))
                             .background(
                                 Brush.verticalGradient(
                                     colors = listOf(
@@ -543,15 +544,15 @@ fun ListScreen(
                     // ===============================
                     Box(
                         modifier = Modifier
-                            .offset(x = 350.dp, y = 535.dp)
+                            .offset(x = maxWidth * 0.85f, y = maxHeight * 0.585f)
                             .graphicsLayer {
                                 alpha = finalAlpha * 0.85f   // variation per candle
                                 translationY = candleDrift * 0.85f
                                 scaleX = 0.16f
                                 scaleY = 0.96f
                             }
-                            .size(width = 26.dp, height = 30.dp)
-                            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
+                            .size(width = maxWidth * 0.063f, height = maxHeight * 0.033f)
+                            .clip(RoundedCornerShape(topStart = maxWidth * 0.039f, topEnd = maxWidth * 0.039f))
                             .background(
                                 Brush.verticalGradient(
                                     colors = listOf(
@@ -568,15 +569,15 @@ fun ListScreen(
                     // ===============================
                     Box(
                         modifier = Modifier
-                            .offset(x = 19.dp, y = 549.dp)
+                            .offset(x = maxWidth * 0.046f, y = maxHeight * 0.60f)
                             .graphicsLayer {
                                 alpha = finalAlpha * 0.55f
                                 translationY = candleDrift
                                 scaleX =  0.16f   // uneven shape
                                 scaleY =  0.46f
                             }
-                            .size(width = 22.dp, height = 14.dp)
-                            .clip(RoundedCornerShape(topStart = 14.dp, topEnd = 14.dp))
+                            .size(width = maxWidth * 0.053f, height = maxHeight * 0.015f)
+                            .clip(RoundedCornerShape(topStart = maxWidth * 0.034f, topEnd = maxWidth * 0.034f))
                             .background(
                                 Brush.verticalGradient(
                                     colors = listOf(
@@ -608,7 +609,7 @@ fun ListScreen(
                         // === VIAL 1 ===
                         Box(
                             modifier = Modifier
-                                .offset(x = 35.dp, y = 545.dp)
+                                .offset(x = maxWidth * 0.085f, y = maxHeight * 0.595f)
                                 .size(width = 40.dp, height = 65.dp)
                                 .graphicsLayer {
                                     alpha = vialPulse * 0.30f
@@ -629,7 +630,7 @@ fun ListScreen(
                         // === VIAL 2 ===
                         Box(
                             modifier = Modifier
-                                .offset(x = 327.dp, y = 507.dp)
+                                .offset(x = maxWidth * 0.794f, y = maxHeight * 0.554f)
                                 .size(width = 66.dp, height = 60.dp)
                                 .graphicsLayer { alpha = vialPulse * 0.30f }
                                 .clip(RoundedCornerShape(32.dp))
@@ -647,7 +648,7 @@ fun ListScreen(
                         // === VIAL 3 ===
                         Box(
                             modifier = Modifier
-                                .offset(x = 22.dp, y = 544.dp)
+                                .offset(x = maxWidth * 0.053f, y = maxHeight * 0.594f)
                                 .size(width = 18.dp, height = 12.dp)
                                 .graphicsLayer {
                                     alpha = vialPulse * 0.55f
@@ -667,7 +668,7 @@ fun ListScreen(
                         // === VIAL 4 ===
                         Box(
                             modifier = Modifier
-                                .offset(x = -48.dp, y = 507.dp)
+                                .offset(x = maxWidth * 0.015f, y = maxHeight * 0.554f)
                                 .size(width = 66.dp, height = 60.dp)
                                 .graphicsLayer { alpha = vialPulse * 0.55f }
                                 .clip(RoundedCornerShape(32.dp))
